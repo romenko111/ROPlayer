@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="menu_title">
+        <item >アーティスト</item>
+        <item>アルバム</item>
+        <item>曲</item>
+        <item>設定</item>
+    </string-array>
+</resources>
