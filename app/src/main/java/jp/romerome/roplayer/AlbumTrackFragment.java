@@ -1,5 +1,6 @@
 package jp.romerome.roplayer;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.MediaMetadataRetriever;
@@ -8,6 +9,7 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -38,6 +40,15 @@ public class AlbumTrackFragment extends Fragment {
 		ArrayList<Track> tracks = RoLibrary.getTracksInAlbum(albumId);
 		ListAlbumTrackAdapter adapter = new ListAlbumTrackAdapter(getActivity(), tracks);
 		listView.setAdapter(adapter);
+		listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+			@Override
+			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+				Track track = (Track) parent.getItemAtPosition(position);
+				Intent intent = new Intent(getActivity(),PlayActivity.class);
+				intent.putExtra(PlayActivity.INTENT_KEY,track.id);
+				startActivity(intent);
+			}
+		});
 
 		ImageView albumArt = (ImageView) rootView.findViewById(R.id.album_art);
 		MediaMetadataRetriever mmr = new MediaMetadataRetriever();

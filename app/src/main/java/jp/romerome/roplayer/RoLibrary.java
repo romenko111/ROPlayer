@@ -111,6 +111,15 @@ public class RoLibrary {
 		return mTracks;
 	}
 
+	public static Track getTrack(long trackId){
+		for(Track track : mTracks){
+			if(track.id == trackId){
+				return track;
+			}
+		}
+		return null;
+	}
+
 	public static ArrayList<Track> getTracksInArtist(Artist artist){
 		return getTracksInArtist(artist.id);
 	}
@@ -165,6 +174,16 @@ public class RoLibrary {
 			}
 		}
 		return null;
+	}
+
+	public static String getDuration(long duration){
+		long dm = duration/60000;
+		long ds = (duration-(dm*60000))/1000;
+		return String.format("%d:%02d", dm, ds);
+	}
+
+	public static String getDuration(Track track){
+		return getDuration(track.duration);
 	}
 
 	private static class TrackNumComparator implements Comparator<Track> {

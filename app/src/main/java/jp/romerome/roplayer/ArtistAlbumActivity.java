@@ -17,7 +17,7 @@ public class ArtistAlbumActivity extends AppCompatActivity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_plane);
+		setContentView(R.layout.activity_toolbar);
 		Intent intent = getIntent();
 		mArtist = RoLibrary.getArtist(intent.getLongExtra(INTENT_KEY,-1));
 
