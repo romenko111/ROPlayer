@@ -10,4 +10,5 @@
     <string name="album">アルバム</string>
     <string name="title">曲</string>
     <string name="setting">設定</string>
+    <string name="album_art">アルバムアート</string>
 </resources>

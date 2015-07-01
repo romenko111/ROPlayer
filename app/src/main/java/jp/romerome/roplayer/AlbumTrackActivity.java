@@ -44,7 +44,7 @@ public class AlbumTrackActivity extends AppCompatActivity{
 
 		switch (id) {
 			case android.R.id.home:
-				finish();
+				onBackPressed();
 				return true;
 
 			default:

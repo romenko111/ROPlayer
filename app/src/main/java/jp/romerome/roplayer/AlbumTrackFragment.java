@@ -5,6 +5,8 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -22,6 +24,7 @@ import java.util.ArrayList;
 public class AlbumTrackFragment extends Fragment {
 
 	private Album mAlbum;
+	private ImageView mAlbumart;
 
 	public AlbumTrackFragment(){
 
@@ -44,13 +47,19 @@ public class AlbumTrackFragment extends Fragment {
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 				Track track = (Track) parent.getItemAtPosition(position);
-				Intent intent = new Intent(getActivity(),PlayActivity.class);
-				intent.putExtra(PlayActivity.INTENT_KEY,track.id);
-				startActivity(intent);
+				Intent intent = new Intent(getActivity(), PlayActivity.class);
+				intent.putExtra(PlayActivity.INTENT_KEY, track.id);
+				String transitionName = getString(R.string.album_art);
+				ActivityOptionsCompat options =
+						ActivityOptionsCompat.makeSceneTransitionAnimation(getActivity(),
+								mAlbumart,   // 遷移がはじまるビュー
+								transitionName    // 遷移先のビューの transitionName
+						);
+				ActivityCompat.startActivity(getActivity(),intent,options.toBundle());
 			}
 		});
 
-		ImageView albumArt = (ImageView) rootView.findViewById(R.id.album_art);
+		mAlbumart = (ImageView) rootView.findViewById(R.id.album_art);
 		MediaMetadataRetriever mmr = new MediaMetadataRetriever();
 		Bitmap bitmap;
 		try {
@@ -65,7 +74,7 @@ public class AlbumTrackFragment extends Fragment {
 		catch (Exception e){
 			bitmap = BitmapFactory.decodeResource(getActivity().getResources(), R.mipmap.ic_launcher);
 		}
-		albumArt.setImageBitmap(bitmap);
+		mAlbumart.setImageBitmap(bitmap);
 
 		TextView albumView = (TextView) rootView.findViewById(R.id.album);
 		albumView.setText(mAlbum.album);

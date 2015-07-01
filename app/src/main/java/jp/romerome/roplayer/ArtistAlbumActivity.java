@@ -44,7 +44,7 @@ public class ArtistAlbumActivity extends AppCompatActivity {
 
 		switch (id) {
 			case android.R.id.home:
-				finish();
+				onBackPressed();
 				return true;
 
 			default:

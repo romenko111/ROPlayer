@@ -9,7 +9,8 @@
 		android:layout_width="60dp"
 		android:layout_height="60dp"
 		android:id="@+id/album_art"
-		android:src="@mipmap/ic_launcher" />
+		android:src="@mipmap/ic_launcher"
+		android:transitionName="@string/album_art"/>
 
 	<LinearLayout
 		android:layout_width="0dp"

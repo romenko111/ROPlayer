@@ -12,7 +12,8 @@
 		<ImageView
 			android:layout_width="100dp"
 			android:layout_height="100dp"
-			android:id="@+id/album_art"/>
+			android:id="@+id/album_art"
+			android:transitionName="@string/album_art"/>
 
 		<LinearLayout
 			android:layout_width="wrap_content"

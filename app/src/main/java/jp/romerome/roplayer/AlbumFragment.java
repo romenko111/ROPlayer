@@ -2,6 +2,8 @@ package jp.romerome.roplayer;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -38,7 +40,13 @@ public class AlbumFragment extends Fragment{
 				Album album = RoLibrary.getAlbums().get(position);
 				Intent intent =  new Intent(getActivity(),AlbumTrackActivity.class);
 				intent.putExtra(AlbumTrackActivity.INTENT_KEY,album.id);
-				startActivity(intent);
+				String transitionName = getString(R.string.album_art);
+				ActivityOptionsCompat options =
+						ActivityOptionsCompat.makeSceneTransitionAnimation(getActivity(),
+								view.findViewById(R.id.album_art),   // 遷移がはじまるビュー
+								transitionName    // 遷移先のビューの transitionName
+						);
+				ActivityCompat.startActivity(getActivity(), intent, options.toBundle());
 			}
 		});
 

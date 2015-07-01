@@ -18,6 +18,7 @@ public class RoLibrary {
 	private static ArrayList<Track> mTracks;
 	private static ArrayList<Artist> mArtists;
 	private static ArrayList<Album> mAlbums;
+	private static Track mCurrentTrack;
 
 	public RoLibrary(Context context){
 		this.context = context;
@@ -184,6 +185,14 @@ public class RoLibrary {
 
 	public static String getDuration(Track track){
 		return getDuration(track.duration);
+	}
+
+	public static Track getCurrentTrack(){
+		return mCurrentTrack;
+	}
+
+	public static void setCurrentTrack(Track track){
+		mCurrentTrack = track;
 	}
 
 	private static class TrackNumComparator implements Comparator<Track> {
