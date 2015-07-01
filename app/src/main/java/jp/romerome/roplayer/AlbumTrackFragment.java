@@ -39,8 +39,8 @@ public class AlbumTrackFragment extends Fragment {
 		ListView listView = (ListView) rootView.findViewById(R.id.listview);
 		Bundle args = getArguments();
 		long albumId = args.getLong(AlbumTrackActivity.INTENT_KEY);
-		mAlbum = RoLibrary.getAlbum(albumId);
-		ArrayList<Track> tracks = RoLibrary.getTracksInAlbum(albumId);
+		mAlbum = RoLibrary.getAlbum(getActivity(),albumId);
+		ArrayList<Track> tracks = RoLibrary.getTracksInAlbum(getActivity(),albumId);
 		ListAlbumTrackAdapter adapter = new ListAlbumTrackAdapter(getActivity(), tracks);
 		listView.setAdapter(adapter);
 		listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {

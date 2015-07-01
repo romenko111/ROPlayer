@@ -19,20 +19,12 @@ public class RoLibrary {
 	private static ArrayList<Artist> mArtists;
 	private static ArrayList<Album> mAlbums;
 	private static Track mCurrentTrack;
-
-	public RoLibrary(Context context){
-		this.context = context;
-	}
+	private static boolean check = false;
 
     public static void update(Context context){
         mTracks = new ArrayList<>();
 		mArtists = new ArrayList<>();
 		mAlbums = new ArrayList<>();
-
-		updateTracks(context);
-    }
-
-	private static void updateTracks(Context context){
 		String[] COLUMNS = {
 				MediaStore.Audio.Media._ID,
 				MediaStore.Audio.Media.DATA,
@@ -93,13 +85,20 @@ public class RoLibrary {
 				}
 			}
 		}
-	}
+		check = true;
+    }
 
-	public static ArrayList<Artist> getArtists(){
+	public static ArrayList<Artist> getArtists(Context context){
+		if(!check){
+			update(context);
+		}
 		return mArtists;
 	}
 
-	public static Artist getArtist(long artistId){
+	public static Artist getArtist(Context context,long artistId){
+		if(!check){
+			update(context);
+		}
 		for(Artist artist : mArtists){
 			if(artist.id == artistId){
 				return artist;
@@ -108,11 +107,17 @@ public class RoLibrary {
 		return null;
 	}
 
-	public static ArrayList<Track> getTracks(){
+	public static ArrayList<Track> getTracks(Context context){
+		if(!check){
+			update(context);
+		}
 		return mTracks;
 	}
 
-	public static Track getTrack(long trackId){
+	public static Track getTrack(Context context,long trackId){
+		if(!check){
+			update(context);
+		}
 		for(Track track : mTracks){
 			if(track.id == trackId){
 				return track;
@@ -121,11 +126,17 @@ public class RoLibrary {
 		return null;
 	}
 
-	public static ArrayList<Track> getTracksInArtist(Artist artist){
-		return getTracksInArtist(artist.id);
+	public static ArrayList<Track> getTracksInArtist(Context context,Artist artist){
+		if(!check){
+			update(context);
+		}
+		return getTracksInArtist(context,artist.id);
 	}
 
-	public static ArrayList<Track> getTracksInArtist(long artistId){
+	public static ArrayList<Track> getTracksInArtist(Context context,long artistId){
+		if(!check){
+			update(context);
+		}
 		ArrayList<Track> tracks = new ArrayList<>();
 		for(Track track : mTracks){
 			if(track.artistId == artistId){
@@ -135,7 +146,10 @@ public class RoLibrary {
 		return tracks;
 	}
 
-	public static ArrayList<Track> getTracksInAlbum(long albumId){
+	public static ArrayList<Track> getTracksInAlbum(Context context,long albumId){
+		if(!check){
+			update(context);
+		}
 		ArrayList<Track> tracks = new ArrayList<>();
 		for(Track track : mTracks){
 			if(track.albumId == albumId){
@@ -146,15 +160,24 @@ public class RoLibrary {
 		return tracks;
 	}
 
-	public static ArrayList<Track> getTracksInAlbum(Album album){
-		return getTracksInAlbum(album.id);
+	public static ArrayList<Track> getTracksInAlbum(Context context,Album album){
+		if(!check){
+			update(context);
+		}
+		return getTracksInAlbum(context,album.id);
 	}
 
-	public static ArrayList<Album> getAlbums() {
+	public static ArrayList<Album> getAlbums(Context context) {
+		if(!check){
+			update(context);
+		}
 		return mAlbums;
 	}
 
-	public static ArrayList<Album> getAlbumsInArtists(long artistId){
+	public static ArrayList<Album> getAlbumsInArtists(Context context,long artistId){
+		if(!check){
+			update(context);
+		}
 		ArrayList<Album> albums = new ArrayList<>();
 		for(Album album : mAlbums){
 			if(album.artistId == artistId){
@@ -164,11 +187,17 @@ public class RoLibrary {
 		return albums;
 	}
 
-	public static ArrayList<Album> getAlbumsInArtists(Artist artist){
-		return getAlbumsInArtists(artist.id);
+	public static ArrayList<Album> getAlbumsInArtists(Context context,Artist artist){
+		if(!check){
+			update(context);
+		}
+		return getAlbumsInArtists(context,artist.id);
 	}
 
-	public static Album getAlbum(long albumId){
+	public static Album getAlbum(Context context,long albumId){
+		if(!check){
+			update(context);
+		}
 		for(Album album : mAlbums){
 			if(album.id == albumId){
 				return album;
@@ -185,14 +214,6 @@ public class RoLibrary {
 
 	public static String getDuration(Track track){
 		return getDuration(track.duration);
-	}
-
-	public static Track getCurrentTrack(){
-		return mCurrentTrack;
-	}
-
-	public static void setCurrentTrack(Track track){
-		mCurrentTrack = track;
 	}
 
 	private static class TrackNumComparator implements Comparator<Track> {

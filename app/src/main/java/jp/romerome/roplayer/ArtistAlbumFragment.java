@@ -31,7 +31,7 @@ public class ArtistAlbumFragment extends Fragment{
 		ListView listView = (ListView) rootView.findViewById(R.id.listview);
 		Bundle args = getArguments();
 		long artistId = args.getLong(ArtistAlbumActivity.INTENT_KEY);
-		mAlbums = RoLibrary.getAlbumsInArtists(artistId);
+		mAlbums = RoLibrary.getAlbumsInArtists(getActivity(),artistId);
 		ListAlbumAdapter adapter = new ListAlbumAdapter(getActivity(), mAlbums);
 		listView.setAdapter(adapter);
 		listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {

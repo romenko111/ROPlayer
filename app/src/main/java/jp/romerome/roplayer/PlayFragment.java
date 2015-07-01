@@ -41,7 +41,7 @@ public class PlayFragment extends Fragment implements PlayerService.StateChangeL
 
 		Bundle args = getArguments();
 		long trackId = args.getLong(PlayActivity.INTENT_KEY);
-		mTrack = RoLibrary.getTrack(trackId);
+		mTrack = RoLibrary.getTrack(getActivity(),trackId);
 
 		TextView tv = (TextView) rootView.findViewById(R.id.elapsed);
 		tv.setText("0:00");

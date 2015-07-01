@@ -29,13 +29,13 @@ public class ArtistFragment extends Fragment{
 		getActivity().setTitle(title);
 
 		ListView listView = (ListView) rootView.findViewById(R.id.listview);
-		List artists = RoLibrary.getArtists();
+		List artists = RoLibrary.getArtists(getActivity());
 		ListArtistAdapter adapter = new ListArtistAdapter(getActivity(), artists);
 		listView.setAdapter(adapter);
 		listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-				Artist artist = RoLibrary.getArtists().get(position);
+				Artist artist = RoLibrary.getArtists(getActivity()).get(position);
 				Intent intent = new Intent(getActivity(),ArtistAlbumActivity.class);
 				intent.putExtra(ArtistAlbumActivity.INTENT_KEY,artist.id);
 				startActivity(intent);

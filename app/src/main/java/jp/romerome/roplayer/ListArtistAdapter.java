@@ -51,7 +51,7 @@ public class ListArtistAdapter extends ArrayAdapter<Artist>{
 		holder.albumsTextView.setText(String.valueOf(mContext.getString(R.string.album)+"("+item.albums+")"));
 		holder.albumartView.setImageBitmap(null);
 
-		ArrayList<Track> tracks = RoLibrary.getTracksInArtist(item);
+		ArrayList<Track> tracks = RoLibrary.getTracksInArtist(mContext,item);
 		holder.albumartView.setTag(tracks.get(0).path);
 		ImageGetTask task = new ImageGetTask(mContext, holder.albumartView);
 		task.execute(tracks.get(0));

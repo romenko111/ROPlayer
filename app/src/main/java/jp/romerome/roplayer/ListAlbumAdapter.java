@@ -48,7 +48,7 @@ public class ListAlbumAdapter extends ArrayAdapter<Album>{
 		holder.albumTextView.setText(item.album);
 		holder.albumartView.setImageBitmap(null);
 
-		ArrayList<Track> tracks = RoLibrary.getTracksInAlbum(item);
+		ArrayList<Track> tracks = RoLibrary.getTracksInAlbum(mContext,item);
 		holder.albumartView.setTag(tracks.get(0).path);
 		ImageGetTask task = new ImageGetTask(mContext, holder.albumartView);
 		task.execute(tracks.get(0));

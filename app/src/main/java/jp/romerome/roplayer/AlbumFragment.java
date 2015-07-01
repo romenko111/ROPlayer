@@ -31,13 +31,13 @@ public class AlbumFragment extends Fragment{
 		getActivity().setTitle(title);
 
 		ListView listView = (ListView) rootView.findViewById(R.id.listview);
-		List albums = RoLibrary.getAlbums();
+		List albums = RoLibrary.getAlbums(getActivity());
 		ListAlbumAdapter adapter = new ListAlbumAdapter(getActivity(), albums);
 		listView.setAdapter(adapter);
 		listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-				Album album = RoLibrary.getAlbums().get(position);
+				Album album = RoLibrary.getAlbums(getActivity()).get(position);
 				Intent intent =  new Intent(getActivity(),AlbumTrackActivity.class);
 				intent.putExtra(AlbumTrackActivity.INTENT_KEY,album.id);
 				String transitionName = getString(R.string.album_art);

@@ -23,8 +23,7 @@ public class PlayActivity extends AppCompatActivity {
 		//setContentView(R.layout.activity_plane);
 		setContentView(R.layout.activity_play);
 		Intent intent = getIntent();
-		mTrack = RoLibrary.getTrack(intent.getLongExtra(INTENT_KEY,-1));
-		RoLibrary.setCurrentTrack(mTrack);
+		mTrack = RoLibrary.getTrack(this,intent.getLongExtra(INTENT_KEY,-1));
 
 		Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
 		toolbar.setTitle("");

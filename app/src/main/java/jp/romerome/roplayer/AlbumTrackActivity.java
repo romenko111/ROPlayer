@@ -19,7 +19,7 @@ public class AlbumTrackActivity extends AppCompatActivity{
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_toolbar);
 		Intent intent = getIntent();
-		mAlbum = RoLibrary.getAlbum(intent.getLongExtra(INTENT_KEY,-1));
+		mAlbum = RoLibrary.getAlbum(this,intent.getLongExtra(INTENT_KEY,-1));
 
 		Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
 		toolbar.setLogo(R.mipmap.ic_launcher);

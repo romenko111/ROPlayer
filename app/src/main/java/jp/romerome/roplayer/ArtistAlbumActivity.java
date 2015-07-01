@@ -19,7 +19,7 @@ public class ArtistAlbumActivity extends AppCompatActivity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_toolbar);
 		Intent intent = getIntent();
-		mArtist = RoLibrary.getArtist(intent.getLongExtra(INTENT_KEY,-1));
+		mArtist = RoLibrary.getArtist(this,intent.getLongExtra(INTENT_KEY,-1));
 
 		Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
 		toolbar.setLogo(R.mipmap.ic_launcher);
