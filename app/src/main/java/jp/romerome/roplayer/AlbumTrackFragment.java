@@ -47,10 +47,14 @@ public class AlbumTrackFragment extends Fragment {
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 				Track track = (Track) parent.getItemAtPosition(position);
-				RoLibrary.setCurrentPlaylist(getActivity(),track.albumId);
-				RoLibrary.setNo(getActivity(),track.trackNo);
+				RoLibrary.setCurrentPlaylist(getActivity(), track.albumId);
+				RoLibrary.setNo(getActivity(),position+1);
+
+				Intent broadcastIntent = new Intent();
+				broadcastIntent.setAction(PlayerService.ACTION_NEW_PLAY);
+				getActivity().sendBroadcast(broadcastIntent);
+
 				Intent intent = new Intent(getActivity(), PlayActivity.class);
-				intent.putExtra(PlayActivity.INTENT_KEY, track.id);
 				String transitionName = getString(R.string.album_art);
 				ActivityOptionsCompat options =
 						ActivityOptionsCompat.makeSceneTransitionAnimation(getActivity(),

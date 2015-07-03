@@ -92,7 +92,7 @@ public class RoLibrary {
 		check = true;
 		mCurrentPlaylist = Database.getCurrentPlaylist(context);
 		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
-		mNo = sp.getInt(KEY_NO, 1);
+		mNo = sp.getInt(KEY_NO, -1);
     }
 
 	public static int getNo(Context context){
@@ -136,6 +136,9 @@ public class RoLibrary {
 	public static Track getCurrentTrack(Context context){
 		if(!check){
 			update(context);
+		}
+		if(mCurrentPlaylist.size() == 0 || mNo < 0 || mNo > mCurrentPlaylist.size()){
+			return null;
 		}
 		return mCurrentPlaylist.get(mNo - 1);
 	}

@@ -9,6 +9,8 @@ import android.graphics.BitmapFactory;
 import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -42,6 +44,19 @@ public class PlaySmallFragment extends Fragment implements PlayerService.StateCh
 							 Bundle savedInstanceState) {
 
 		View rootView = inflater.inflate(R.layout.fragment_play_small, container, false);
+		rootView.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				Intent intent = new Intent(getActivity(), PlayActivity.class);
+				String transitionName = getString(R.string.album_art);
+				ActivityOptionsCompat options =
+						ActivityOptionsCompat.makeSceneTransitionAnimation(getActivity(),
+								mAlbumart,   // ëJà⁄Ç™ÇÕÇ∂Ç‹ÇÈÉrÉÖÅ[
+								transitionName    // ëJà⁄êÊÇÃÉrÉÖÅ[ÇÃ transitionName
+						);
+				ActivityCompat.startActivity(getActivity(), intent, options.toBundle());
+			}
+		});
 
 		mTrack = RoLibrary.getCurrentTrack(getActivity());
 
@@ -52,15 +67,7 @@ public class PlaySmallFragment extends Fragment implements PlayerService.StateCh
 		mPlayButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				switch (mState) {
-					case PlayerService.STATE_PAUSE:
-						mService.play();
-						break;
-
-					case PlayerService.STATE_PLAY:
-						mService.pause();
-						break;
-				}
+				mService.playpause();
 			}
 		});
 
@@ -87,33 +94,35 @@ public class PlaySmallFragment extends Fragment implements PlayerService.StateCh
 	}
 
 	private void updateView(int no,int playlistSize){
-		mTitleView.setText(mTrack.title);
-		mArtistView.setText(mTrack.artist);
+		if(mTrack != null) {
+			mTitleView.setText(mTrack.title);
+			mArtistView.setText(mTrack.artist);
 
-		MediaMetadataRetriever mmr = new MediaMetadataRetriever();
-		Bitmap bitmap;
-		try {
-			mmr.setDataSource(mTrack.path);
-			byte[] data = mmr.getEmbeddedPicture();
-			if (data == null) {
+			MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+			Bitmap bitmap;
+			try {
+				mmr.setDataSource(mTrack.path);
+				byte[] data = mmr.getEmbeddedPicture();
+				if (data == null) {
+					bitmap = BitmapFactory.decodeResource(getActivity().getResources(), R.mipmap.ic_launcher);
+				} else {
+					bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+				}
+			} catch (Exception e) {
 				bitmap = BitmapFactory.decodeResource(getActivity().getResources(), R.mipmap.ic_launcher);
-			} else {
-				bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
 			}
-		} catch (Exception e) {
-			bitmap = BitmapFactory.decodeResource(getActivity().getResources(), R.mipmap.ic_launcher);
+			mAlbumart.setImageBitmap(bitmap);
 		}
-		mAlbumart.setImageBitmap(bitmap);
 	}
 
 	@Override
 	public void onResume() {
 		super.onResume();
-		if(mService != null) {
-			mService.setStateChangeListener(this);
+		/*if(mService != null) {
+			mService.addStateChangeListener(this);
 			mTrack = RoLibrary.getCurrentTrack(getActivity());
 			updateView(RoLibrary.getNo(getActivity()),RoLibrary.getCurrentPlaylist(getActivity()).size());
-		}
+		}*/
 	}
 
 	private void initService(){
@@ -125,17 +134,20 @@ public class PlaySmallFragment extends Fragment implements PlayerService.StateCh
 			public void onServiceConnected(ComponentName name, IBinder service) {
 				PlayerService.RoBinder binder = (PlayerService.RoBinder)service;
 				mService = binder.getService();
-				mService.setStateChangeListener(PlaySmallFragment.this);
+				mService.addStateChangeListener(PlaySmallFragment.this);
 				mState = mService.getState();
 				switch (mState){
 					case PlayerService.STATE_PLAY:
 						mPlayButton.setBackgroundResource(R.drawable.ic_media_pause);
+						updateView(RoLibrary.getNo(getActivity()), RoLibrary.getCurrentPlaylist(getActivity()).size());
 						break;
 
 					case PlayerService.STATE_PAUSE:
 						mPlayButton.setBackgroundResource(R.drawable.ic_media_play);
+						updateView(RoLibrary.getNo(getActivity()), RoLibrary.getCurrentPlaylist(getActivity()).size());
 						break;
 				}
+
 			}
 
 			@Override

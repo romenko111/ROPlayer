@@ -1,6 +1,5 @@
 package jp.romerome.roplayer;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
@@ -24,8 +23,7 @@ public class PlayActivity extends AppCompatActivity implements PlayerService.Sta
 		super.onCreate(savedInstanceState);
 		//setContentView(R.layout.activity_plane);
 		setContentView(R.layout.activity_play);
-		Intent intent = getIntent();
-		mTrack = RoLibrary.getTrack(this,intent.getLongExtra(INTENT_KEY,-1));
+		mTrack = RoLibrary.getCurrentTrack(this);
 
 		Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
 		toolbar.setTitle("");
@@ -38,13 +36,12 @@ public class PlayActivity extends AppCompatActivity implements PlayerService.Sta
 
 		PlayFragment fragment = new PlayFragment();
 		fragment.setStateChangeListener(this);
-		Bundle args = new Bundle();
-		args.putLong(INTENT_KEY, mTrack.id);
-		fragment.setArguments(args);
 		FragmentManager fragmentManager = getSupportFragmentManager();
 		fragmentManager.beginTransaction()
 				.replace(R.id.body, fragment)
 				.commit();
+
+		updateView();
 	}
 
 	@Override
@@ -62,9 +59,11 @@ public class PlayActivity extends AppCompatActivity implements PlayerService.Sta
 	}
 
 	private void updateView(){
-		mArtistView.setText(mTrack.artist);
-		mTitleView.setText(mTrack.title);
-		mAlbumView.setText(mTrack.album);
+		if(mTrack != null) {
+			mArtistView.setText(mTrack.artist);
+			mTitleView.setText(mTrack.title);
+			mAlbumView.setText(mTrack.album);
+		}
 	}
 
 	@Override

@@ -41,7 +41,8 @@ public class PlayFragment extends Fragment implements PlayerService.StateChangeL
 	private int mState = PlayerService.STATE_STOP;
 	private PlayerService.StateChangeListener mListener;
 	private Timer mTimer;
-	Handler mHandler = new Handler();
+	private Handler mHandler = new Handler();
+	private boolean isSeeking = false;
 
 	public PlayFragment(){
 
@@ -52,29 +53,38 @@ public class PlayFragment extends Fragment implements PlayerService.StateChangeL
 							 Bundle savedInstanceState) {
 
 		View rootView = inflater.inflate(R.layout.fragment_play, container, false);
-
-		Bundle args = getArguments();
-		long trackId = args.getLong(PlayActivity.INTENT_KEY);
-		mTrack = RoLibrary.getTrack(getActivity(),trackId);
+		mTrack = RoLibrary.getCurrentTrack(getActivity());
 
 		mElpsedView = (TextView) rootView.findViewById(R.id.elapsed);
 		mDurationView = (TextView) rootView.findViewById(R.id.duration);
 		mTrackNoView = (TextView) rootView.findViewById(R.id.trackNo);
 
 		mSeekBar = (SeekBar) rootView.findViewById(R.id.seekbar);
+		mSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+			@Override
+			public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+				if(isSeeking){
+					mElpsedView.setText(RoLibrary.getStringTime(seekBar.getProgress()));
+				}
+			}
+
+			@Override
+			public void onStartTrackingTouch(SeekBar seekBar) {
+				isSeeking = true;
+			}
+
+			@Override
+			public void onStopTrackingTouch(SeekBar seekBar) {
+				mElpsedView.setText(RoLibrary.getStringTime(seekBar.getProgress()));
+				mService.seekTo(seekBar.getProgress());
+				isSeeking = false;
+			}
+		});
 		mPlayButton = (ImageButton) rootView.findViewById(R.id.btn_play);
 		mPlayButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				switch (mState) {
-					case PlayerService.STATE_PAUSE:
-						mService.play();
-						break;
-
-					case PlayerService.STATE_PLAY:
-						mService.pause();
-						break;
-				}
+				mService.playpause();
 			}
 		});
 
@@ -101,25 +111,27 @@ public class PlayFragment extends Fragment implements PlayerService.StateChangeL
 	}
 
 	private void updateView(int no,int playlistSize){
-		mElpsedView.setText("0:00");
-		mDurationView.setText(RoLibrary.getStringTime(mTrack));
-		mTrackNoView.setText(no + "/" + playlistSize);
-		mSeekBar.setMax((int)mTrack.duration);
+		if(mTrack != null) {
+			mElpsedView.setText("0:00");
+			mDurationView.setText(RoLibrary.getStringTime(mTrack));
+			mTrackNoView.setText(no + "/" + playlistSize);
+			mSeekBar.setMax((int) mTrack.duration);
 
-		MediaMetadataRetriever mmr = new MediaMetadataRetriever();
-		Bitmap bitmap;
-		try {
-			mmr.setDataSource(mTrack.path);
-			byte[] data = mmr.getEmbeddedPicture();
-			if (data == null) {
+			MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+			Bitmap bitmap;
+			try {
+				mmr.setDataSource(mTrack.path);
+				byte[] data = mmr.getEmbeddedPicture();
+				if (data == null) {
+					bitmap = BitmapFactory.decodeResource(getActivity().getResources(), R.mipmap.ic_launcher);
+				} else {
+					bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+				}
+			} catch (Exception e) {
 				bitmap = BitmapFactory.decodeResource(getActivity().getResources(), R.mipmap.ic_launcher);
-			} else {
-				bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
 			}
-		} catch (Exception e) {
-			bitmap = BitmapFactory.decodeResource(getActivity().getResources(), R.mipmap.ic_launcher);
+			mAlbumart.setImageBitmap(bitmap);
 		}
-		mAlbumart.setImageBitmap(bitmap);
 	}
 
 	private void initService(){
@@ -131,8 +143,36 @@ public class PlayFragment extends Fragment implements PlayerService.StateChangeL
 			public void onServiceConnected(ComponentName name, IBinder service) {
 				PlayerService.RoBinder binder = (PlayerService.RoBinder)service;
 				mService = binder.getService();
-				mService.setStateChangeListener(PlayFragment.this);
-				mService.newPlay();
+				mService.addStateChangeListener(PlayFragment.this);
+				mState = mService.getState();
+				switch (mState){
+					case PlayerService.STATE_PLAY:
+						mPlayButton.setBackgroundResource(R.drawable.ic_media_pause);
+						break;
+
+					case PlayerService.STATE_PAUSE:
+						mPlayButton.setBackgroundResource(R.drawable.ic_media_play);
+						break;
+				}
+				if(mState != PlayerService.STATE_STOP) {
+					updateView(RoLibrary.getNo(getActivity()), RoLibrary.getCurrentPlaylist(getActivity()).size());
+					mTimer = new Timer(true);
+					mTimer.schedule(new TimerTask() {
+						@Override
+						public void run() {
+							mHandler.post(new Runnable() {
+								@Override
+								public void run() {
+									if (!isSeeking) {
+										int time = mService.getElpsedTime();
+										mElpsedView.setText(RoLibrary.getStringTime(time));
+										mSeekBar.setProgress(time);
+									}
+								}
+							});
+						}
+					}, 100, 100);
+				}
 			}
 
 			@Override
@@ -149,28 +189,10 @@ public class PlayFragment extends Fragment implements PlayerService.StateChangeL
 		switch (mState){
 			case PlayerService.STATE_PLAY:
 				mPlayButton.setBackgroundResource(R.drawable.ic_media_pause);
-				mTimer = new Timer(true);
-				mTimer.schedule(new TimerTask() {
-					@Override
-					public void run() {
-						mHandler.post(new Runnable() {
-							@Override
-							public void run() {
-								int time = mService.getElpsedTime();
-								mElpsedView.setText(RoLibrary.getStringTime(time));
-								mSeekBar.setProgress(time);
-							}
-						});
-					}
-				},100,100);
 				break;
 
 			case PlayerService.STATE_PAUSE:
 				mPlayButton.setBackgroundResource(R.drawable.ic_media_play);
-				if(mTimer != null){
-					mTimer.cancel();
-					mTimer = null;
-				}
 				break;
 		}
 	}

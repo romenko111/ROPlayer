@@ -3,7 +3,10 @@ package jp.romerome.roplayer;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.media.MediaPlayer;
 import android.os.Binder;
 import android.os.IBinder;
@@ -22,22 +25,37 @@ public class PlayerService extends Service {
 	public static final int STATE_PLAY = 0;
 	public static final int STATE_PAUSE = 1;
 	public static final int STATE_STOP = 2;
+	public static final String ACTION_PLAY = "Ro_playpause";
+	public static final String ACTION_NEXT = "Ro_next";
+	public static final String ACTION_PREVIOUS = "Ro_previous";
+	public static final String ACTION_NEW_PLAY = "Ro_newplay";
 
 	private NotificationManager mNM;
 	private final IBinder mBinder = new RoBinder();
 	private MediaPlayer mp;
 	private int mState = STATE_STOP;
-	private StateChangeListener mListener;
+	private ArrayList<StateChangeListener> mListeners;
 	private ArrayList<Track> mCurrentPlaylist;
 	private int mCurrentNo;
 
 	@Override
 	public void onCreate() {
+		PlayerBroadcasrReceiver receiver = new PlayerBroadcasrReceiver();
+		IntentFilter filter = new IntentFilter();
+		filter.addAction(ACTION_NEW_PLAY);
+		filter.addAction(ACTION_NEXT);
+		filter.addAction(ACTION_PLAY);
+		filter.addAction(ACTION_PREVIOUS);
+		registerReceiver(receiver,filter);
+
+		mListeners = new ArrayList<>();
 		mNM = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
 		mCurrentPlaylist = RoLibrary.getCurrentPlaylist(this);
 		mCurrentNo = RoLibrary.getNo(this);
-		setNewTrack(mCurrentPlaylist.get(mCurrentNo-1));
-		setState(STATE_PAUSE);
+		if(mCurrentPlaylist.size() > 0 && mCurrentNo > 0 && mCurrentNo <= mCurrentPlaylist.size()) {
+			setNewTrack(mCurrentPlaylist.get(mCurrentNo - 1));
+			setState(STATE_PAUSE);
+		}
 	}
 
 	@Override
@@ -61,7 +79,6 @@ public class PlayerService extends Service {
 
 	private void showNotification(Track track) {
 		Intent notificationIntent = new Intent(this, PlayActivity.class);
-		notificationIntent.putExtra(PlayActivity.INTENT_KEY, track.id);
 		PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
 		NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
@@ -75,15 +92,36 @@ public class PlayerService extends Service {
 		startForeground(R.string.app_name, builder.build());
 	}
 
-	public void play(){
-		if(mp != null && !mp.isPlaying() && (mState == STATE_PAUSE || mState == STATE_STOP)){
-			if(mState == STATE_PAUSE){
-				mp.start();
-				setState(STATE_PLAY);
+	public void playpause(){
+		if(mp != null){
+			if(!mp.isPlaying()) {
+				play();
+			} else {
+				pause();
 			}
-			else if(mState == STATE_STOP){
-				play(mCurrentPlaylist.get(mCurrentNo - 1));
-			}
+		}
+	}
+
+	private void play(){
+		if(mState == STATE_PAUSE){
+			mp.start();
+			setState(STATE_PLAY);
+		}
+		else if(mState == STATE_STOP){
+			play(mCurrentPlaylist.get(mCurrentNo - 1));
+		}
+	}
+
+	private void pause(){
+		if(mState == STATE_PLAY){
+			mp.pause();
+			setState(STATE_PAUSE);
+		}
+	}
+
+	public void seekTo(int time){
+		if(mp != null){
+			mp.seekTo(time);
 		}
 	}
 
@@ -103,30 +141,43 @@ public class PlayerService extends Service {
 		}
 		else{
 			RoLibrary.setNo(this, mCurrentNo);
-			play(mCurrentPlaylist.get(mCurrentNo - 1));
+			switch (mState){
+				case STATE_PAUSE:
+					setNewTrack(mCurrentPlaylist.get(mCurrentNo - 1));
+					break;
+
+				case STATE_PLAY:
+					play(mCurrentPlaylist.get(mCurrentNo - 1));
+					break;
+			}
 		}
 	}
 
 	public void previous(){
-		mCurrentNo--;
-		if(mCurrentNo < 1){
-			mCurrentNo = 1;
+		if(getElpsedTime() > 3000){
+			seekTo(0);
+		} else {
+			mCurrentNo--;
+			if (mCurrentNo < 1) {
+				mCurrentNo = 1;
+			}
+			RoLibrary.setNo(this, mCurrentNo);
+			switch (mState) {
+				case STATE_PAUSE:
+					setNewTrack(mCurrentPlaylist.get(mCurrentNo - 1));
+					break;
+
+				case STATE_PLAY:
+					play(mCurrentPlaylist.get(mCurrentNo - 1));
+					break;
+			}
 		}
-		RoLibrary.setNo(this, mCurrentNo);
-		play(mCurrentPlaylist.get(mCurrentNo - 1));
 	}
 
 	private void play(Track track){
 		setNewTrack(track);
 		mp.start();
 		setState(STATE_PLAY);
-	}
-
-	public void pause(){
-		if(mp != null && mp.isPlaying() && mState == STATE_PLAY){
-			mp.pause();
-			setState(STATE_PAUSE);
-		}
 	}
 
 	public int getState(){
@@ -166,20 +217,20 @@ public class PlayerService extends Service {
 	private void setState(int state){
 		if(mState != state) {
 			mState = state;
-			if (mListener != null) {
-				mListener.onStateChange(mState);
+			for(StateChangeListener listener : mListeners){
+				listener.onStateChange(mState);
 			}
 		}
 	}
 
 	private void onTrackChange(Track track){
-		if(mListener != null){
-			mListener.onTrackChange(track,mCurrentNo,mCurrentPlaylist.size());
+		for(StateChangeListener listener : mListeners){
+			listener.onTrackChange(track,mCurrentNo,mCurrentPlaylist.size());
 		}
 	}
 
-	public void setStateChangeListener(StateChangeListener listener){
-		mListener = listener;
+	public void addStateChangeListener(StateChangeListener listener){
+		mListeners.add(listener);
 	}
 
 	public class RoBinder extends Binder {
@@ -192,6 +243,33 @@ public class PlayerService extends Service {
 		public void onStateChange(int state);
 
 		public void onTrackChange(Track track,int no,int playlistSize);
+	}
+
+	public class PlayerBroadcasrReceiver extends BroadcastReceiver{
+
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			String action = intent.getAction();
+			if(action != null){
+				switch (action){
+					case ACTION_NEW_PLAY:
+						newPlay();
+						break;
+
+					case ACTION_PLAY:
+						playpause();
+						break;
+
+					case ACTION_NEXT:
+						next();
+						break;
+
+					case ACTION_PREVIOUS:
+						previous();
+						break;
+				}
+			}
+		}
 	}
 
 }
