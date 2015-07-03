@@ -44,7 +44,7 @@ public class ListTrackAdapter extends ArrayAdapter<Track> {
 
         holder.artistTextView.setText(item.artist);
         holder.trackTextView.setText(item.title);
-        holder.durationTextView.setText(RoLibrary.getDuration(item));
+        holder.durationTextView.setText(RoLibrary.getStringTime(item));
 		holder.albumartView.setImageBitmap(null);
 		holder.albumartView.setTag(item.path);
 		ImageGetTask task = new ImageGetTask(mContext, holder.albumartView);

@@ -1,6 +1,5 @@
 package jp.romerome.roplayer;
 
-import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -8,10 +7,11 @@ import android.content.Intent;
 import android.media.MediaPlayer;
 import android.os.Binder;
 import android.os.IBinder;
-import android.support.v7.app.NotificationCompat;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.EventListener;
 
 /**
@@ -25,20 +25,24 @@ public class PlayerService extends Service {
 
 	private NotificationManager mNM;
 	private final IBinder mBinder = new RoBinder();
-	MediaPlayer mp;
-	Track mTrack;
+	private MediaPlayer mp;
 	private int mState = STATE_STOP;
 	private StateChangeListener mListener;
+	private ArrayList<Track> mCurrentPlaylist;
+	private int mCurrentNo;
 
 	@Override
 	public void onCreate() {
 		mNM = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
-		// Display a notification about us starting.
-		showNotification();
+		mCurrentPlaylist = RoLibrary.getCurrentPlaylist(this);
+		mCurrentNo = RoLibrary.getNo(this);
+		setNewTrack(mCurrentPlaylist.get(mCurrentNo-1));
+		setState(STATE_PAUSE);
 	}
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
+
 		return super.onStartCommand(intent, flags, startId);
 	}
 
@@ -55,34 +59,64 @@ public class PlayerService extends Service {
 		mp = null;
 	}
 
-	private void showNotification() {
-		Intent notificationIntent = new Intent(this, MainActivity.class);
-		PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+	private void showNotification(Track track) {
+		Intent notificationIntent = new Intent(this, PlayActivity.class);
+		notificationIntent.putExtra(PlayActivity.INTENT_KEY, track.id);
+		PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-		Notification notification = new NotificationCompat.Builder(this)
-				.setSmallIcon(R.mipmap.ic_launcher)    // アイコン
-				.setTicker("Hello")                      // 通知バーに表示する簡易メッセージ
-				.setWhen(System.currentTimeMillis())     // 時間
-				.setContentTitle("My notification")      // 展開メッセージのタイトル
-				.setContentText("Hello Notification!!")  // 展開メッセージの詳細メッセージ
-				.setContentIntent(contentIntent)         // PendingIntent
-				.build();
-		mNM.notify(R.string.app_name,notification);
-	}
+		NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
+		builder.setSmallIcon(R.mipmap.ic_launcher);
+		builder.setContentTitle(track.title);
+		builder.setContentText(track.album);
+		builder.setSubText(track.artist);
+		builder.setWhen(System.currentTimeMillis());
+		builder.setContentIntent(contentIntent);
 
-	public boolean isPlaying(){
-		if(mp == null)return  false;
-		return mp.isPlaying();
+		startForeground(R.string.app_name, builder.build());
 	}
 
 	public void play(){
-		if(mp != null && !mp.isPlaying() && mState == STATE_PAUSE){
-			mp.start();
-			setState(STATE_PLAY);
+		if(mp != null && !mp.isPlaying() && (mState == STATE_PAUSE || mState == STATE_STOP)){
+			if(mState == STATE_PAUSE){
+				mp.start();
+				setState(STATE_PLAY);
+			}
+			else if(mState == STATE_STOP){
+				play(mCurrentPlaylist.get(mCurrentNo - 1));
+			}
 		}
 	}
 
-	public void play(Track track){
+	public void newPlay(){
+		mCurrentPlaylist = RoLibrary.getCurrentPlaylist(this);
+		mCurrentNo = RoLibrary.getNo(this);
+		play(mCurrentPlaylist.get(mCurrentNo - 1));
+	}
+
+	public void next(){
+		mCurrentNo++;
+		if(mCurrentNo > mCurrentPlaylist.size()){
+			mCurrentNo = 1;
+			RoLibrary.setNo(this, mCurrentNo);
+			setNewTrack(mCurrentPlaylist.get(mCurrentNo - 1));
+			setState(STATE_PAUSE);
+		}
+		else{
+			RoLibrary.setNo(this, mCurrentNo);
+			play(mCurrentPlaylist.get(mCurrentNo - 1));
+		}
+	}
+
+	public void previous(){
+		mCurrentNo--;
+		if(mCurrentNo < 1){
+			mCurrentNo = 1;
+		}
+		RoLibrary.setNo(this, mCurrentNo);
+		play(mCurrentPlaylist.get(mCurrentNo - 1));
+	}
+
+	private void play(Track track){
 		setNewTrack(track);
 		mp.start();
 		setState(STATE_PLAY);
@@ -95,30 +129,56 @@ public class PlayerService extends Service {
 		}
 	}
 
+	public int getState(){
+		return mState;
+	}
+
+	public int getElpsedTime(){
+		if(mp == null){
+			return -1;
+		}
+		return mp.getCurrentPosition();
+	}
+
 	private void setNewTrack(Track track){
-		mTrack = track;
 		if(mp != null){
 			mp.stop();
 			mp.release();
 		}
 		mp = new MediaPlayer();
+		mp.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+			@Override
+			public void onCompletion(MediaPlayer mp) {
+				next();
+			}
+		});
 		try {
-			mp.setDataSource(mTrack.path);
+			mp.setDataSource(track.path);
 			mp.prepare();
 		} catch (IOException e) {
 			Log.d("TEST", e.getMessage());
 			throw new RuntimeException(e.getMessage(), e);
 		}
+		showNotification(track);
+		onTrackChange(track);
 	}
 
 	private void setState(int state){
-		mState = state;
-		if(mListener != null){
-			mListener.onStateChange(mState);
+		if(mState != state) {
+			mState = state;
+			if (mListener != null) {
+				mListener.onStateChange(mState);
+			}
 		}
 	}
 
-	public void setOnStateChangeListener(StateChangeListener listener){
+	private void onTrackChange(Track track){
+		if(mListener != null){
+			mListener.onTrackChange(track,mCurrentNo,mCurrentPlaylist.size());
+		}
+	}
+
+	public void setStateChangeListener(StateChangeListener listener){
 		mListener = listener;
 	}
 
@@ -130,6 +190,8 @@ public class PlayerService extends Service {
 
 	public interface StateChangeListener extends EventListener{
 		public void onStateChange(int state);
+
+		public void onTrackChange(Track track,int no,int playlistSize);
 	}
 
 }

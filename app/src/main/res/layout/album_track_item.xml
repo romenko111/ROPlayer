@@ -8,7 +8,7 @@
 	<TextView
 		android:layout_width="20dp"
 		android:layout_height="wrap_content"
-		android:id="@+id/track_num"
+		android:id="@+id/trackNo"
 		android:textAppearance="?android:attr/textAppearanceMedium"
 		android:layout_gravity="center_vertical"
 		android:gravity="right"/>

@@ -31,7 +31,7 @@ public class Track {
         albumId         = cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM_ID));
         artistId        = cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Media.ARTIST_ID));
         duration        = cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Media.DURATION));
-        trackNo         = cursor.getInt(cursor.getColumnIndex(MediaStore.Audio.Media.TRACK));
+        trackNo         = cursor.getInt(cursor.getColumnIndex(MediaStore.Audio.Media.TRACK)) % 100;
         uri             = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id);
     }
 

@@ -47,6 +47,8 @@ public class AlbumTrackFragment extends Fragment {
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 				Track track = (Track) parent.getItemAtPosition(position);
+				RoLibrary.setCurrentPlaylist(getActivity(),track.albumId);
+				RoLibrary.setNo(getActivity(),track.trackNo);
 				Intent intent = new Intent(getActivity(), PlayActivity.class);
 				intent.putExtra(PlayActivity.INTENT_KEY, track.id);
 				String transitionName = getString(R.string.album_art);
@@ -55,7 +57,7 @@ public class AlbumTrackFragment extends Fragment {
 								mAlbumart,   // 遷移がはじまるビュー
 								transitionName    // 遷移先のビューの transitionName
 						);
-				ActivityCompat.startActivity(getActivity(),intent,options.toBundle());
+				ActivityCompat.startActivity(getActivity(), intent, options.toBundle());
 			}
 		});
 

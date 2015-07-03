@@ -36,6 +36,11 @@ public class ArtistAlbumActivity extends AppCompatActivity {
 		fragmentManager.beginTransaction()
 				.replace(R.id.body, fragment)
 				.commit();
+
+		fragment = new PlaySmallFragment();
+		fragmentManager.beginTransaction()
+				.replace(R.id.play_small, fragment)
+				.commit();
 	}
 
 	@Override

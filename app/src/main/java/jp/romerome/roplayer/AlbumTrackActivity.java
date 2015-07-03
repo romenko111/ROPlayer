@@ -30,11 +30,16 @@ public class AlbumTrackActivity extends AppCompatActivity{
 
 		Fragment fragment = new AlbumTrackFragment();
 		Bundle args = new Bundle();
-		args.putLong(INTENT_KEY,mAlbum.id);
+		args.putLong(INTENT_KEY, mAlbum.id);
 		fragment.setArguments(args);
 		FragmentManager fragmentManager = getSupportFragmentManager();
 		fragmentManager.beginTransaction()
 				.replace(R.id.body, fragment)
+				.commit();
+
+		fragment = new PlaySmallFragment();
+		fragmentManager.beginTransaction()
+				.replace(R.id.play_small, fragment)
 				.commit();
 	}
 

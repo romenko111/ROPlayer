@@ -2,7 +2,6 @@ package jp.romerome.roplayer;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -12,10 +11,13 @@ import android.widget.TextView;
 /**
  * Created by roman on 2015/06/30.
  */
-public class PlayActivity extends AppCompatActivity {
+public class PlayActivity extends AppCompatActivity implements PlayerService.StateChangeListener{
 
 	public static final String INTENT_KEY = "TRACK_ID";
 	private Track mTrack;
+	private TextView mArtistView;
+	private TextView mTitleView;
+	private TextView mAlbumView;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -27,16 +29,15 @@ public class PlayActivity extends AppCompatActivity {
 
 		Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
 		toolbar.setTitle("");
-		TextView tv = (TextView) toolbar.findViewById(R.id.artist);
-		tv.setText(mTrack.artist);
-		tv = (TextView) toolbar.findViewById(R.id.title);
-		tv.setText(mTrack.title);
-		tv = (TextView) toolbar.findViewById(R.id.album);
-		tv.setText(mTrack.album);
+		mArtistView = (TextView) toolbar.findViewById(R.id.artist);
+		mTitleView = (TextView) toolbar.findViewById(R.id.title);
+		mAlbumView = (TextView) toolbar.findViewById(R.id.album);
+
 		setSupportActionBar(toolbar);
 		getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-		Fragment fragment = new PlayFragment();
+		PlayFragment fragment = new PlayFragment();
+		fragment.setStateChangeListener(this);
 		Bundle args = new Bundle();
 		args.putLong(INTENT_KEY, mTrack.id);
 		fragment.setArguments(args);
@@ -60,4 +61,20 @@ public class PlayActivity extends AppCompatActivity {
 		}
 	}
 
+	private void updateView(){
+		mArtistView.setText(mTrack.artist);
+		mTitleView.setText(mTrack.title);
+		mAlbumView.setText(mTrack.album);
+	}
+
+	@Override
+	public void onStateChange(int state) {
+
+	}
+
+	@Override
+	public void onTrackChange(Track track,int no,int playlistSize) {
+		mTrack = track;
+		updateView();
+	}
 }

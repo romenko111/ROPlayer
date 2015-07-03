@@ -35,7 +35,7 @@ public class ListAlbumTrackAdapter extends ArrayAdapter<Track> {
 		if(convertView==null){
 			convertView = mInflater.inflate(R.layout.album_track_item, null);
 			holder = new ViewHolder();
-			holder.trackNumTextView = (TextView)convertView.findViewById(R.id.track_num);
+			holder.trackNumTextView = (TextView)convertView.findViewById(R.id.trackNo);
 			holder.artistTextView   = (TextView)convertView.findViewById(R.id.artist);
 			holder.titleTextView = (TextView)convertView.findViewById(R.id.title);
 			holder.durationTextView = (TextView)convertView.findViewById(R.id.duration);
@@ -47,7 +47,7 @@ public class ListAlbumTrackAdapter extends ArrayAdapter<Track> {
 		holder.artistTextView.setText(item.artist);
 		holder.trackNumTextView.setText(String.valueOf(position + 1));
 		holder.titleTextView.setText(item.title);
-		holder.durationTextView.setText(RoLibrary.getDuration(item));
+		holder.durationTextView.setText(RoLibrary.getStringTime(item));
 
 		return convertView;
 	}

@@ -47,8 +47,6 @@ public class MainActivity extends AppCompatActivity {
         // Set DrawerToggle.
         readyDrawerToggle(toolbar);
 
-		RoLibrary.update(this);
-
         // initialize drawer list.
         mDrawerItemTitles = getResources().getStringArray(R.array.menu_title);
         mDrawerLayout = (LinearLayout) findViewById(R.id.slide_menu);
@@ -65,6 +63,12 @@ public class MainActivity extends AppCompatActivity {
 		mDrawerSetting.setTag(3);
 		mDrawerSetting.setOnClickListener(new DrawerItemClickListener());
 		mDrawerItems = new TextView[]{mDrawerArtist,mDrawerAlbum,mDrawerTitle,mDrawerSetting};
+
+		PlaySmallFragment fragment = new PlaySmallFragment();
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        fragmentManager.beginTransaction()
+                .replace(R.id.play_small, fragment)
+                .commit();
 
         // Drawer listの一つ目をデフォルトで表示する場合
         selectItem(0);

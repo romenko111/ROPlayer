@@ -8,6 +8,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -15,7 +16,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.SeekBar;
 import android.widget.TextView;
+
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * Created by roman on 2015/06/30.
@@ -25,9 +30,18 @@ public class PlayFragment extends Fragment implements PlayerService.StateChangeL
 	private Track mTrack;
 	private ImageView mAlbumart;
 	private ImageButton mPlayButton;
+	private ImageButton mNextButton;
+	private ImageButton mPreviousButton;
+	private TextView mTrackNoView;
+	private TextView mDurationView;
+	private TextView mElpsedView;
+	private SeekBar mSeekBar;
 	private PlayerService mService;
 	private ServiceConnection mServiceConnection;
 	private int mState = PlayerService.STATE_STOP;
+	private PlayerService.StateChangeListener mListener;
+	private Timer mTimer;
+	Handler mHandler = new Handler();
 
 	public PlayFragment(){
 
@@ -43,17 +57,16 @@ public class PlayFragment extends Fragment implements PlayerService.StateChangeL
 		long trackId = args.getLong(PlayActivity.INTENT_KEY);
 		mTrack = RoLibrary.getTrack(getActivity(),trackId);
 
-		TextView tv = (TextView) rootView.findViewById(R.id.elapsed);
-		tv.setText("0:00");
+		mElpsedView = (TextView) rootView.findViewById(R.id.elapsed);
+		mDurationView = (TextView) rootView.findViewById(R.id.duration);
+		mTrackNoView = (TextView) rootView.findViewById(R.id.trackNo);
 
-		tv = (TextView) rootView.findViewById(R.id.duration);
-		tv.setText(RoLibrary.getDuration(mTrack));
-
+		mSeekBar = (SeekBar) rootView.findViewById(R.id.seekbar);
 		mPlayButton = (ImageButton) rootView.findViewById(R.id.btn_play);
 		mPlayButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				switch (mState){
+				switch (mState) {
 					case PlayerService.STATE_PAUSE:
 						mService.play();
 						break;
@@ -65,7 +78,34 @@ public class PlayFragment extends Fragment implements PlayerService.StateChangeL
 			}
 		});
 
+		mNextButton = (ImageButton) rootView.findViewById(R.id.btn_next);
+		mNextButton.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				mService.next();
+			}
+		});
+
+		mPreviousButton = (ImageButton) rootView.findViewById(R.id.btn_previous);
+		mPreviousButton.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				mService.previous();
+			}
+		});
+
 		mAlbumart = (ImageView) rootView.findViewById(R.id.album_art);
+		initService();
+
+		return rootView;
+	}
+
+	private void updateView(int no,int playlistSize){
+		mElpsedView.setText("0:00");
+		mDurationView.setText(RoLibrary.getStringTime(mTrack));
+		mTrackNoView.setText(no + "/" + playlistSize);
+		mSeekBar.setMax((int)mTrack.duration);
+
 		MediaMetadataRetriever mmr = new MediaMetadataRetriever();
 		Bitmap bitmap;
 		try {
@@ -80,9 +120,6 @@ public class PlayFragment extends Fragment implements PlayerService.StateChangeL
 			bitmap = BitmapFactory.decodeResource(getActivity().getResources(), R.mipmap.ic_launcher);
 		}
 		mAlbumart.setImageBitmap(bitmap);
-		initService();
-
-		return rootView;
 	}
 
 	private void initService(){
@@ -94,8 +131,8 @@ public class PlayFragment extends Fragment implements PlayerService.StateChangeL
 			public void onServiceConnected(ComponentName name, IBinder service) {
 				PlayerService.RoBinder binder = (PlayerService.RoBinder)service;
 				mService = binder.getService();
-				mService.setOnStateChangeListener(PlayFragment.this);
-				mService.play(mTrack);
+				mService.setStateChangeListener(PlayFragment.this);
+				mService.newPlay();
 			}
 
 			@Override
@@ -103,7 +140,7 @@ public class PlayFragment extends Fragment implements PlayerService.StateChangeL
 
 			}
 		};
-		getActivity().bindService(service,mServiceConnection, Context.BIND_AUTO_CREATE);
+		getActivity().bindService(service, mServiceConnection, Context.BIND_AUTO_CREATE);
 	}
 
 	@Override
@@ -112,11 +149,43 @@ public class PlayFragment extends Fragment implements PlayerService.StateChangeL
 		switch (mState){
 			case PlayerService.STATE_PLAY:
 				mPlayButton.setBackgroundResource(R.drawable.ic_media_pause);
+				mTimer = new Timer(true);
+				mTimer.schedule(new TimerTask() {
+					@Override
+					public void run() {
+						mHandler.post(new Runnable() {
+							@Override
+							public void run() {
+								int time = mService.getElpsedTime();
+								mElpsedView.setText(RoLibrary.getStringTime(time));
+								mSeekBar.setProgress(time);
+							}
+						});
+					}
+				},100,100);
 				break;
 
 			case PlayerService.STATE_PAUSE:
 				mPlayButton.setBackgroundResource(R.drawable.ic_media_play);
+				if(mTimer != null){
+					mTimer.cancel();
+					mTimer = null;
+				}
 				break;
 		}
 	}
+
+	@Override
+	public void onTrackChange(Track track,int no,int playlistSize){
+		mTrack = track;
+		updateView(no,playlistSize);
+		if(mListener != null){
+			mListener.onTrackChange(track,no,playlistSize);
+		}
+	}
+
+	public  void setStateChangeListener(PlayerService.StateChangeListener listener){
+		mListener = listener;
+	}
+
 }

@@ -2,7 +2,9 @@ package jp.romerome.roplayer;
 
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 
 import java.util.ArrayList;
@@ -18,7 +20,9 @@ public class RoLibrary {
 	private static ArrayList<Track> mTracks;
 	private static ArrayList<Artist> mArtists;
 	private static ArrayList<Album> mAlbums;
-	private static Track mCurrentTrack;
+	private static ArrayList<Track> mCurrentPlaylist;
+	private static int mNo;
+	private static final String KEY_NO = "No";
 	private static boolean check = false;
 
     public static void update(Context context){
@@ -86,13 +90,54 @@ public class RoLibrary {
 			}
 		}
 		check = true;
+		mCurrentPlaylist = Database.getCurrentPlaylist(context);
+		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
+		mNo = sp.getInt(KEY_NO, 1);
     }
+
+	public static int getNo(Context context){
+		if(!check){
+			update(context);
+		}
+		return mNo;
+	}
+
+	public static void setNo(Context context,int no){
+		mNo = no;
+		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
+		SharedPreferences.Editor editor = sp.edit();
+		editor.putInt(KEY_NO,mNo);
+		editor.commit();
+	}
+
+	public static ArrayList<Track> getCurrentPlaylist(Context context){
+		if(!check){
+			update(context);
+		}
+		return mCurrentPlaylist;
+	}
+
+	public static void setCurrentPlaylist(Context context,ArrayList<Track> playlist){
+		mCurrentPlaylist = playlist;
+		Database.setCurrentPlaylist(context,mCurrentPlaylist);
+	}
+
+	public static void setCurrentPlaylist(Context context,long albumId){
+		setCurrentPlaylist(context, getTracksInAlbum(context, albumId));
+	}
 
 	public static ArrayList<Artist> getArtists(Context context){
 		if(!check){
 			update(context);
 		}
 		return mArtists;
+	}
+
+	public static Track getCurrentTrack(Context context){
+		if(!check){
+			update(context);
+		}
+		return mCurrentPlaylist.get(mNo - 1);
 	}
 
 	public static Artist getArtist(Context context,long artistId){
@@ -206,14 +251,14 @@ public class RoLibrary {
 		return null;
 	}
 
-	public static String getDuration(long duration){
-		long dm = duration/60000;
-		long ds = (duration-(dm*60000))/1000;
+	public static String getStringTime(long time){
+		long dm = time/60000;
+		long ds = (time-(dm*60000))/1000;
 		return String.format("%d:%02d", dm, ds);
 	}
 
-	public static String getDuration(Track track){
-		return getDuration(track.duration);
+	public static String getStringTime(Track track){
+		return getStringTime(track.duration);
 	}
 
 	private static class TrackNumComparator implements Comparator<Track> {

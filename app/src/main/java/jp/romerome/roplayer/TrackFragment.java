@@ -23,7 +23,7 @@ public class TrackFragment extends Fragment {
         getActivity().setTitle(title);
 
         ListView listView = (ListView) rootView.findViewById(R.id.listview);
-        List tracks = RoLibrary.getTracks();
+        List tracks = RoLibrary.getTracks(getActivity());
         ListTrackAdapter adapter = new ListTrackAdapter(getActivity(), tracks);
         listView.setAdapter(adapter);
 
