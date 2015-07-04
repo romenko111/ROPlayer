@@ -110,6 +110,55 @@ public class PlayFragment extends Fragment implements PlayerService.StateChangeL
 		return rootView;
 	}
 
+	@Override
+	public void onResume(){
+		super.onResume();
+		if(mService != null){
+			mService.addStateChangeListener(this);
+			mState = mService.getState();
+			switch (mState){
+				case PlayerService.STATE_PLAY:
+					mPlayButton.setBackgroundResource(R.drawable.ic_media_pause);
+					break;
+
+				case PlayerService.STATE_PAUSE:
+					mPlayButton.setBackgroundResource(R.drawable.ic_media_play);
+					break;
+			}
+			if(mState != PlayerService.STATE_STOP) {
+				updateView(RoLibrary.getNo(getActivity()), RoLibrary.getCurrentPlaylist(getActivity()).size());
+				if (mTimer != null) {
+					mTimer.cancel();
+					mTimer = null;
+				}
+				mTimer = new Timer(true);
+				mTimer.schedule(new TimerTask() {
+					@Override
+					public void run() {
+						mHandler.post(new Runnable() {
+							@Override
+							public void run() {
+								if (!isSeeking) {
+									int time = mService.getElpsedTime();
+									mElpsedView.setText(RoLibrary.getStringTime(time));
+									mSeekBar.setProgress(time);
+								}
+							}
+						});
+					}
+				}, 100, 100);
+			}
+		}
+	}
+
+	@Override
+	public void onPause(){
+		super.onPause();
+		if(mService != null){
+			mService.removeStateChangeListener(this);
+		}
+	}
+
 	private void updateView(int no,int playlistSize){
 		if(mTrack != null) {
 			mElpsedView.setText("0:00");
@@ -156,6 +205,10 @@ public class PlayFragment extends Fragment implements PlayerService.StateChangeL
 				}
 				if(mState != PlayerService.STATE_STOP) {
 					updateView(RoLibrary.getNo(getActivity()), RoLibrary.getCurrentPlaylist(getActivity()).size());
+					if(mTimer != null){
+						mTimer.cancel();
+						mTimer = null;
+					}
 					mTimer = new Timer(true);
 					mTimer.schedule(new TimerTask() {
 						@Override

@@ -115,16 +115,6 @@ public class PlaySmallFragment extends Fragment implements PlayerService.StateCh
 		}
 	}
 
-	@Override
-	public void onResume() {
-		super.onResume();
-		/*if(mService != null) {
-			mService.addStateChangeListener(this);
-			mTrack = RoLibrary.getCurrentTrack(getActivity());
-			updateView(RoLibrary.getNo(getActivity()),RoLibrary.getCurrentPlaylist(getActivity()).size());
-		}*/
-	}
-
 	private void initService(){
 		Intent service = new Intent(getActivity().getApplication(),PlayerService.class);
 		getActivity().startService(service);

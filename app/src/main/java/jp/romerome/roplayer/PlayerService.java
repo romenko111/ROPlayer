@@ -233,6 +233,12 @@ public class PlayerService extends Service {
 		mListeners.add(listener);
 	}
 
+	public void removeStateChangeListener(StateChangeListener listener){
+		if(mListeners.contains(listener)) {
+			mListeners.remove(listener);
+		}
+	}
+
 	public class RoBinder extends Binder {
 		public PlayerService getService(){
 			return PlayerService.this;

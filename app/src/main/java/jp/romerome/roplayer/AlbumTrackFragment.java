@@ -62,6 +62,7 @@ public class AlbumTrackFragment extends Fragment {
 				Intent broadcastIntent = new Intent();
 				broadcastIntent.setAction(PlayerService.ACTION_NEW_PLAY);
 				getActivity().sendBroadcast(broadcastIntent);
+
 			}
 		});
 
