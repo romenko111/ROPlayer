@@ -17,12 +17,18 @@ public class Database {
 	public static void setCurrentPlaylist(Context context,ArrayList<Track> playlist){
 		DatabaseHelper dbHelper = DatabaseHelper.getInstance(context);
 		SQLiteDatabase db = dbHelper.getWritableDatabase();
-		db.delete(DatabaseHelper.TABLE_NAME,null,null);
+		db.beginTransaction();
+		try {
+			db.delete(DatabaseHelper.TABLE_NAME, null, null);
 
-		for(Track track : playlist){
-			ContentValues values = new ContentValues();
-			values.put(DatabaseHelper.COLUMN_TRACK_ID,track.id);
-			db.insert(DatabaseHelper.TABLE_NAME,null,values);
+			for (Track track : playlist) {
+				ContentValues values = new ContentValues();
+				values.put(DatabaseHelper.COLUMN_TRACK_ID, track.id);
+				db.insert(DatabaseHelper.TABLE_NAME, null, values);
+			}
+			db.setTransactionSuccessful();
+		}finally {
+			db.endTransaction();
 		}
 		//db.close();
 	}

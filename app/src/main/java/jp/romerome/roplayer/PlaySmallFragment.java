@@ -12,6 +12,7 @@ import android.os.IBinder;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -87,9 +88,8 @@ public class PlaySmallFragment extends Fragment implements PlayerService.StateCh
 			}
 		});
 		mAlbumart = (ImageView) rootView.findViewById(R.id.album_art);
-		updateView(RoLibrary.getNo(getActivity()),RoLibrary.getCurrentPlaylist(getActivity()).size());
+		updateView(RoLibrary.getNo(getActivity()), RoLibrary.getCurrentPlaylist(getActivity()).size());
 		initService();
-
 		return rootView;
 	}
 
@@ -104,12 +104,12 @@ public class PlaySmallFragment extends Fragment implements PlayerService.StateCh
 				mmr.setDataSource(mTrack.path);
 				byte[] data = mmr.getEmbeddedPicture();
 				if (data == null) {
-					bitmap = BitmapFactory.decodeResource(getActivity().getResources(), R.mipmap.ic_launcher);
+					bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
 				} else {
 					bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
 				}
 			} catch (Exception e) {
-				bitmap = BitmapFactory.decodeResource(getActivity().getResources(), R.mipmap.ic_launcher);
+				bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
 			}
 			mAlbumart.setImageBitmap(bitmap);
 		}
@@ -152,7 +152,7 @@ public class PlaySmallFragment extends Fragment implements PlayerService.StateCh
 
 			@Override
 			public void onServiceDisconnected(ComponentName name) {
-
+				Log.d("test","onServiceDisconnected");
 			}
 		};
 		getActivity().bindService(service, mServiceConnection, Context.BIND_AUTO_CREATE);

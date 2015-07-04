@@ -117,9 +117,14 @@ public class RoLibrary {
 		return mCurrentPlaylist;
 	}
 
-	public static void setCurrentPlaylist(Context context,ArrayList<Track> playlist){
+	public static void setCurrentPlaylist(final Context context,ArrayList<Track> playlist){
 		mCurrentPlaylist = playlist;
-		Database.setCurrentPlaylist(context,mCurrentPlaylist);
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				Database.setCurrentPlaylist(context,mCurrentPlaylist);
+			}
+		});
 	}
 
 	public static void setCurrentPlaylist(Context context,long albumId){
