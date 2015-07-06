@@ -41,6 +41,7 @@ public class ListAlbumAdapter extends ArrayAdapter<Album>{
 			convertView.setTag(holder);
 		}else{
 			holder = (ViewHolder) convertView.getTag();
+			holder.task.cancel(true);
 		}
 
 		holder.artistTextView.setText(item.artist);
@@ -50,8 +51,8 @@ public class ListAlbumAdapter extends ArrayAdapter<Album>{
 
 		ArrayList<Track> tracks = RoLibrary.getTracksInAlbum(mContext,item);
 		holder.albumartView.setTag(tracks.get(0).path);
-		ImageGetTask task = new ImageGetTask(mContext, holder.albumartView);
-		task.execute(tracks.get(0));
+		holder.task = new ImageGetTask(mContext, holder.albumartView);
+		holder.task.execute(tracks.get(0));
 
 		return convertView;
 	}
@@ -61,5 +62,6 @@ public class ListAlbumAdapter extends ArrayAdapter<Album>{
 		TextView  artistTextView;
 		TextView  albumTextView;
 		ImageView albumartView;
+		ImageGetTask task;
 	}
 }

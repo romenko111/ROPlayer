@@ -69,8 +69,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 		mRepeatMode = RoLibrary.getRepeatMode(this);
 		if(mCurrentPlaylist.size() > 0 && mCurrentNo > 0 && mCurrentNo <= mCurrentPlaylist.size()) {
 			showNotification(mCurrentPlaylist.get(mCurrentNo - 1));
-			setNewTrack(mCurrentPlaylist.get(mCurrentNo - 1));
-			setState(STATE_PAUSE);
+			setNewTrack(mCurrentPlaylist.get(mCurrentNo - 1),false);
 		}
 	}
 
@@ -176,7 +175,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 			setState(STATE_PLAY);
 		}
 		else if(mState == STATE_STOP){
-			play(mCurrentPlaylist.get(mCurrentNo - 1));
+			setNewTrack(mCurrentPlaylist.get(mCurrentNo - 1),true);
 		}
 	}
 
@@ -196,7 +195,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 	public void newPlay(){
 		mCurrentPlaylist = RoLibrary.getCurrentPlaylist(this);
 		mCurrentNo = RoLibrary.getNo(this);
-		play(mCurrentPlaylist.get(mCurrentNo - 1));
+		setNewTrack(mCurrentPlaylist.get(mCurrentNo - 1),true);
 	}
 
 	public void next(){
@@ -215,8 +214,8 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 					track = RoLibrary.getCurrentTrack(this);
 					index = albums.indexOf(RoLibrary.getAlbum(this, track.albumId));
 					index++;
-					if(index > albums.size()){
-						index = 1;
+					if(index > albums.size() - 1){
+						index = 0;
 					}
 					tracks = RoLibrary.getTracksInAlbum(this,albums.get(index));
 					RoLibrary.setCurrentPlaylist(this,tracks,playwith);
@@ -227,8 +226,8 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 					albums = RoLibrary.getAlbumsInArtists(this,track.artistId);
 					index = albums.indexOf(RoLibrary.getAlbum(this, track.albumId));
 					index++;
-					if(index > albums.size()){
-						index = 1;
+					if(index > albums.size() - 1){
+						index = 0;
 					}
 					tracks = RoLibrary.getTracksInAlbum(this, albums.get(index));
 					RoLibrary.setCurrentPlaylist(this,tracks,playwith);
@@ -239,11 +238,11 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 		RoLibrary.setNo(this, mCurrentNo);
 			switch (mState){
 				case STATE_PAUSE:
-					setNewTrack(mCurrentPlaylist.get(mCurrentNo - 1));
+					setNewTrack(mCurrentPlaylist.get(mCurrentNo - 1),false);
 					break;
 
 				case STATE_PLAY:
-					play(mCurrentPlaylist.get(mCurrentNo - 1));
+					setNewTrack(mCurrentPlaylist.get(mCurrentNo - 1),true);
 					break;
 			}
 	}
@@ -267,8 +266,8 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 						track = RoLibrary.getCurrentTrack(this);
 						index = albums.indexOf(RoLibrary.getAlbum(this, track.albumId));
 						index--;
-						if(index < 1){
-							index = albums.size();
+						if(index < 0){
+							index = albums.size() - 1;
 						}
 						tracks = RoLibrary.getTracksInAlbum(this,albums.get(index));
 						RoLibrary.setCurrentPlaylist(this,tracks,playwith);
@@ -280,8 +279,8 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 						albums = RoLibrary.getAlbumsInArtists(this,track.artistId);
 						index = albums.indexOf(RoLibrary.getAlbum(this, track.albumId));
 						index--;
-						if(index < 1){
-							index = albums.size();
+						if(index < 0){
+							index = albums.size() - 1;
 						}
 						tracks = RoLibrary.getTracksInAlbum(this, albums.get(index));
 						RoLibrary.setCurrentPlaylist(this,tracks,playwith);
@@ -293,20 +292,14 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 			RoLibrary.setNo(this, mCurrentNo);
 			switch (mState){
 				case STATE_PAUSE:
-					setNewTrack(mCurrentPlaylist.get(mCurrentNo - 1));
+					setNewTrack(mCurrentPlaylist.get(mCurrentNo - 1),false);
 					break;
 
 				case STATE_PLAY:
-					play(mCurrentPlaylist.get(mCurrentNo - 1));
+					setNewTrack(mCurrentPlaylist.get(mCurrentNo - 1),true);
 					break;
 			}
 		}
-	}
-
-	private void play(Track track){
-		setNewTrack(track);
-		mp.start();
-		setState(STATE_PLAY);
 	}
 
 	public int getState(){
@@ -364,16 +357,27 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 		return mRepeatMode;
 	}
 
-	private void setNewTrack(Track track){
+	private void setNewTrack(Track track, final boolean isPlay){
 		if(mp != null){
 			mp.stop();
 			mp.release();
 		}
 		mp = new MediaPlayer();
 		mp.setOnCompletionListener(this);
+		mp.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+			@Override
+			public void onPrepared(MediaPlayer mp) {
+				if(isPlay){
+					mp.start();
+					setState(STATE_PLAY);
+				}else{
+					setState(STATE_PAUSE);
+				}
+			}
+		});
 		try {
 			mp.setDataSource(track.path);
-			mp.prepare();
+			mp.prepareAsync();
 		} catch (IOException e) {
 			Log.d("TEST", e.getMessage());
 			throw new RuntimeException(e.getMessage(), e);
@@ -447,8 +451,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 					mCurrentNo = 1;
 				}
 				RoLibrary.setNo(this, mCurrentNo);
-				setNewTrack(mCurrentPlaylist.get(mCurrentNo - 1));
-				setState(STATE_PAUSE);
+				setNewTrack(mCurrentPlaylist.get(mCurrentNo - 1),false);
 				break;
 
 			case RoLibrary.REPEAT_TRACK:
@@ -461,11 +464,10 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 				if(mCurrentNo > mCurrentPlaylist.size()){
 					mCurrentNo = 1;
 					RoLibrary.setNo(this, mCurrentNo);
-					setNewTrack(mCurrentPlaylist.get(mCurrentNo - 1));
-					setState(STATE_PAUSE);
+					setNewTrack(mCurrentPlaylist.get(mCurrentNo - 1),false);
 				}else{
 					RoLibrary.setNo(this, mCurrentNo);
-					play(mCurrentPlaylist.get(mCurrentNo - 1));
+					setNewTrack(mCurrentPlaylist.get(mCurrentNo - 1),true);
 				}
 				break;
 
@@ -475,7 +477,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 					mCurrentNo = 1;
 				}
 				RoLibrary.setNo(this, mCurrentNo);
-				play(mCurrentPlaylist.get(mCurrentNo - 1));
+				setNewTrack(mCurrentPlaylist.get(mCurrentNo - 1),true);
 				break;
 
 			case RoLibrary.REPEAT_NEXT_ALBUM:
@@ -494,8 +496,8 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 							track = RoLibrary.getCurrentTrack(this);
 							index = albums.indexOf(RoLibrary.getAlbum(this, track.albumId));
 							index++;
-							if(index > albums.size()){
-								index = 1;
+							if(index > albums.size() - 1){
+								index = 0;
 							}
 							tracks = RoLibrary.getTracksInAlbum(this,albums.get(index));
 							RoLibrary.setCurrentPlaylist(this,tracks,playwith);
@@ -506,8 +508,8 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 							albums = RoLibrary.getAlbumsInArtists(this,track.artistId);
 							index = albums.indexOf(RoLibrary.getAlbum(this, track.albumId));
 							index++;
-							if(index > albums.size()){
-								index = 1;
+							if(index > albums.size() - 1){
+								index = 0;
 							}
 							tracks = RoLibrary.getTracksInAlbum(this, albums.get(index));
 							RoLibrary.setCurrentPlaylist(this,tracks,playwith);
@@ -516,7 +518,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 					}
 				}
 				RoLibrary.setNo(this, mCurrentNo);
-				play(mCurrentPlaylist.get(mCurrentNo - 1));
+				setNewTrack(mCurrentPlaylist.get(mCurrentNo - 1),true);
 				break;
 		}
 	}

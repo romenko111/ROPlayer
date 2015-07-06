@@ -40,6 +40,7 @@ public class ListTrackAdapter extends ArrayAdapter<Track> {
             convertView.setTag(holder);
         }else{
             holder = (ViewHolder) convertView.getTag();
+			holder.task.cancel(true);
         }
 
         holder.artistTextView.setText(item.artist);
@@ -47,8 +48,8 @@ public class ListTrackAdapter extends ArrayAdapter<Track> {
         holder.durationTextView.setText(RoLibrary.getStringTime(item));
 		holder.albumartView.setImageBitmap(null);
 		holder.albumartView.setTag(item.path);
-		ImageGetTask task = new ImageGetTask(mContext, holder.albumartView);
-		task.execute(item);
+		holder.task = new ImageGetTask(mContext, holder.albumartView);
+		holder.task.execute(item);
 
         return convertView;
     }
@@ -58,6 +59,7 @@ public class ListTrackAdapter extends ArrayAdapter<Track> {
         TextView  artistTextView;
         TextView  durationTextView;
         ImageView albumartView;
+        ImageGetTask task;
     }
 
 }
