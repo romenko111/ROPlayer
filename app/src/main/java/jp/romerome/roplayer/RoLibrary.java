@@ -16,13 +16,27 @@ import java.util.Comparator;
  */
 public class RoLibrary {
 
-	private Context context;
+	private static final String KEY_NO = "No";
+	private static final String KEY_REPEAT = "Reapeat";
+	public static final String KEY_PLAYWITH = "Playwith";
+
+	public static final int REPEAT_OFF = 0;
+	public static final int REPEAT_NORMAL = 1;
+	public static final int REPEAT_TRACK = 2;
+	public static final int REPEAT_OFF_TRACK = 3;
+	public static final int REPEAT_NEXT_ALBUM = 4;
+
+	public static final int PLAYWITH_ALBUM = 0;
+	public static final int PLAYWITH_ALBUM_ARTIST = 2;
+	public static final int PLAYWITH_TRACK = 1;
+
 	private static ArrayList<Track> mTracks;
 	private static ArrayList<Artist> mArtists;
 	private static ArrayList<Album> mAlbums;
 	private static ArrayList<Track> mCurrentPlaylist;
 	private static int mNo;
-	private static final String KEY_NO = "No";
+	private static int mRepeatMode;
+	private static int mPlaywith;
 	private static boolean check = false;
 
     public static void update(Context context){
@@ -93,6 +107,8 @@ public class RoLibrary {
 		mCurrentPlaylist = Database.getCurrentPlaylist(context);
 		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
 		mNo = sp.getInt(KEY_NO, -1);
+		mRepeatMode = sp.getInt(KEY_REPEAT,REPEAT_OFF);
+		mPlaywith = sp.getInt(KEY_PLAYWITH,PLAYWITH_TRACK);
     }
 
 	public static int getNo(Context context){
@@ -110,6 +126,21 @@ public class RoLibrary {
 		editor.commit();
 	}
 
+	public static int getRepeatMode(Context context){
+		if(!check){
+			update(context);
+		}
+		return mRepeatMode;
+	}
+
+	public static void setRepeatMode(Context context ,int repeatMode){
+		mRepeatMode = repeatMode;
+		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
+		SharedPreferences.Editor editor = sp.edit();
+		editor.putInt(KEY_REPEAT,mRepeatMode);
+		editor.commit();
+	}
+
 	public static ArrayList<Track> getCurrentPlaylist(Context context){
 		if(!check){
 			update(context);
@@ -117,18 +148,30 @@ public class RoLibrary {
 		return mCurrentPlaylist;
 	}
 
-	public static void setCurrentPlaylist(final Context context,ArrayList<Track> playlist){
+	public static void setCurrentPlaylist(final Context context,ArrayList<Track> playlist,int playwith){
 		mCurrentPlaylist = playlist;
+		mPlaywith = playwith;
+		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
+		SharedPreferences.Editor editor = sp.edit();
+		editor.putInt(KEY_PLAYWITH,mPlaywith);
+		editor.commit();
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
 				Database.setCurrentPlaylist(context,mCurrentPlaylist);
 			}
-		});
+		}).start();
 	}
 
-	public static void setCurrentPlaylist(Context context,long albumId){
-		setCurrentPlaylist(context, getTracksInAlbum(context, albumId));
+	public static void setCurrentPlaylist(Context context,long albumId,int playwith){
+		setCurrentPlaylist(context, getTracksInAlbum(context, albumId), playwith);
+	}
+
+	public static int getPlaywith(Context context){
+		if(!check){
+			update(context);
+		}
+		return mPlaywith;
 	}
 
 	public static ArrayList<Artist> getArtists(Context context){

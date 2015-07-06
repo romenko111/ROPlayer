@@ -1,5 +1,6 @@
 package jp.romerome.roplayer;
 
+import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -7,11 +8,16 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.media.AudioManager;
+import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.os.Binder;
 import android.os.IBinder;
-import android.support.v4.app.NotificationCompat;
+import android.support.v7.app.NotificationCompat;
 import android.util.Log;
+import android.widget.RemoteViews;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -20,7 +26,7 @@ import java.util.EventListener;
 /**
  * Created by roman on 2015/07/01.
  */
-public class PlayerService extends Service {
+public class PlayerService extends Service implements MediaPlayer.OnCompletionListener {
 
 	public static final int STATE_PLAY = 0;
 	public static final int STATE_PAUSE = 1;
@@ -29,6 +35,7 @@ public class PlayerService extends Service {
 	public static final String ACTION_NEXT = "Ro_next";
 	public static final String ACTION_PREVIOUS = "Ro_previous";
 	public static final String ACTION_NEW_PLAY = "Ro_newplay";
+	public static final String ACTION_REPEAT_MODE = "Ro_repeatmode";
 
 	private NotificationManager mNM;
 	private final IBinder mBinder = new RoBinder();
@@ -37,22 +44,31 @@ public class PlayerService extends Service {
 	private ArrayList<StateChangeListener> mListeners;
 	private ArrayList<Track> mCurrentPlaylist;
 	private int mCurrentNo;
+	private RemoteViews mBigViews;
+	private RemoteViews mSmallViews;
+	private Notification mNotify;
+	private int mRepeatMode = RoLibrary.REPEAT_OFF;
+	private PlayerBroadcastReceiver mReceiver;
 
 	@Override
 	public void onCreate() {
-		PlayerBroadcasrReceiver receiver = new PlayerBroadcasrReceiver();
+		mReceiver = new PlayerBroadcastReceiver();
 		IntentFilter filter = new IntentFilter();
 		filter.addAction(ACTION_NEW_PLAY);
 		filter.addAction(ACTION_NEXT);
 		filter.addAction(ACTION_PLAY);
 		filter.addAction(ACTION_PREVIOUS);
-		registerReceiver(receiver,filter);
+		filter.addAction(ACTION_REPEAT_MODE);
+		filter.addAction(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
+		registerReceiver(mReceiver, filter);
 
 		mListeners = new ArrayList<>();
 		mNM = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
 		mCurrentPlaylist = RoLibrary.getCurrentPlaylist(this);
 		mCurrentNo = RoLibrary.getNo(this);
+		mRepeatMode = RoLibrary.getRepeatMode(this);
 		if(mCurrentPlaylist.size() > 0 && mCurrentNo > 0 && mCurrentNo <= mCurrentPlaylist.size()) {
+			showNotification(mCurrentPlaylist.get(mCurrentNo - 1));
 			setNewTrack(mCurrentPlaylist.get(mCurrentNo - 1));
 			setState(STATE_PAUSE);
 		}
@@ -60,7 +76,6 @@ public class PlayerService extends Service {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-
 		return super.onStartCommand(intent, flags, startId);
 	}
 
@@ -75,21 +90,74 @@ public class PlayerService extends Service {
 		mp.stop();
 		mp.release();
 		mp = null;
+		unregisterReceiver(mReceiver);
 	}
 
 	private void showNotification(Track track) {
+		mBigViews = new RemoteViews(getPackageName(),R.layout.notify_big);
+		mSmallViews = new RemoteViews(getPackageName(),R.layout.notify_small);
+		MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+		Bitmap bitmap;
+		try {
+			mmr.setDataSource(track.path);
+			byte[] data = mmr.getEmbeddedPicture();
+			if (data == null) {
+				bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
+			} else {
+				bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+			}
+		} catch (Exception e) {
+			bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
+		}
+		mBigViews.setImageViewBitmap(R.id.album_art, bitmap);
+		mSmallViews.setImageViewBitmap(R.id.album_art, bitmap);
+
+		mBigViews.setTextViewText(R.id.title, track.title);
+		mBigViews.setTextViewText(R.id.artist, track.artist);
+		mSmallViews.setTextViewText(R.id.title, track.title);
+		mSmallViews.setTextViewText(R.id.artist, track.artist);
+
+		Intent intent = new Intent(ACTION_PLAY);
+		PendingIntent pi = PendingIntent.getBroadcast(this,0,intent,0);
+		mBigViews.setOnClickPendingIntent(R.id.btn_play, pi);
+		mSmallViews.setOnClickPendingIntent(R.id.btn_play, pi);
+		switch (mState){
+			case STATE_PAUSE:
+				mBigViews.setInt(R.id.btn_play, "setBackgroundResource", R.drawable.play_small);
+				mSmallViews.setInt(R.id.btn_play, "setBackgroundResource", R.drawable.play_small);
+				break;
+
+			case STATE_PLAY:
+				mBigViews.setInt(R.id.btn_play, "setBackgroundResource", R.drawable.pause_small);
+				mSmallViews.setInt(R.id.btn_play, "setBackgroundResource", R.drawable.pause_small);
+				break;
+		}
+
+		intent = new Intent(ACTION_NEXT);
+		pi = PendingIntent.getBroadcast(this,0,intent,0);
+		mBigViews.setOnClickPendingIntent(R.id.btn_next, pi);
+		mSmallViews.setOnClickPendingIntent(R.id.btn_next, pi);
+
+		intent = new Intent(ACTION_PREVIOUS);
+		pi = PendingIntent.getBroadcast(this,0,intent,0);
+		mBigViews.setOnClickPendingIntent(R.id.btn_previous, pi);
+		mSmallViews.setOnClickPendingIntent(R.id.btn_previous, pi);
+
+		intent = new Intent(ACTION_REPEAT_MODE);
+		pi = PendingIntent.getBroadcast(this,0,intent,0);
+		mBigViews.setOnClickPendingIntent(R.id.btn_repeat,pi);
+
 		Intent notificationIntent = new Intent(this, PlayActivity.class);
 		PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
 		NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
 		builder.setSmallIcon(R.mipmap.ic_launcher);
-		builder.setContentTitle(track.title);
-		builder.setContentText(track.album);
-		builder.setSubText(track.artist);
+		builder.setContent(mSmallViews);
 		builder.setWhen(System.currentTimeMillis());
 		builder.setContentIntent(contentIntent);
-
-		startForeground(R.string.app_name, builder.build());
+		mNotify = builder.build();
+		mNotify.bigContentView = mBigViews;
+		startForeground(R.string.app_name, mNotify);
 	}
 
 	public void playpause(){
@@ -133,14 +201,42 @@ public class PlayerService extends Service {
 
 	public void next(){
 		mCurrentNo++;
-		if(mCurrentNo > mCurrentPlaylist.size()){
+		if(mCurrentNo > mCurrentPlaylist.size()) {
 			mCurrentNo = 1;
-			RoLibrary.setNo(this, mCurrentNo);
-			setNewTrack(mCurrentPlaylist.get(mCurrentNo - 1));
-			setState(STATE_PAUSE);
+			int repeatMode = RoLibrary.getRepeatMode(this);
+			int playwith = RoLibrary.getPlaywith(this);
+			if(repeatMode == RoLibrary.REPEAT_NEXT_ALBUM){
+				ArrayList<Album> albums;
+				Track track;
+				int index;
+				ArrayList<Track> tracks;
+				if(playwith == RoLibrary.PLAYWITH_ALBUM){
+					albums = RoLibrary.getAlbums(this);
+					track = RoLibrary.getCurrentTrack(this);
+					index = albums.indexOf(RoLibrary.getAlbum(this, track.albumId));
+					index++;
+					if(index > albums.size()){
+						index = 1;
+					}
+					tracks = RoLibrary.getTracksInAlbum(this,albums.get(index));
+					RoLibrary.setCurrentPlaylist(this,tracks,playwith);
+					mCurrentPlaylist = tracks;
+				}
+				else if(playwith == RoLibrary.PLAYWITH_ALBUM_ARTIST){
+					track = RoLibrary.getCurrentTrack(this);
+					albums = RoLibrary.getAlbumsInArtists(this,track.artistId);
+					index = albums.indexOf(RoLibrary.getAlbum(this, track.albumId));
+					index++;
+					if(index > albums.size()){
+						index = 1;
+					}
+					tracks = RoLibrary.getTracksInAlbum(this, albums.get(index));
+					RoLibrary.setCurrentPlaylist(this,tracks,playwith);
+					mCurrentPlaylist = tracks;
+				}
+			}
 		}
-		else{
-			RoLibrary.setNo(this, mCurrentNo);
+		RoLibrary.setNo(this, mCurrentNo);
 			switch (mState){
 				case STATE_PAUSE:
 					setNewTrack(mCurrentPlaylist.get(mCurrentNo - 1));
@@ -150,7 +246,6 @@ public class PlayerService extends Service {
 					play(mCurrentPlaylist.get(mCurrentNo - 1));
 					break;
 			}
-		}
 	}
 
 	public void previous(){
@@ -158,11 +253,45 @@ public class PlayerService extends Service {
 			seekTo(0);
 		} else {
 			mCurrentNo--;
-			if (mCurrentNo < 1) {
-				mCurrentNo = 1;
+			if(mCurrentNo < 1) {
+				mCurrentNo = mCurrentPlaylist.size();
+				int repeatMode = RoLibrary.getRepeatMode(this);
+				int playwith = RoLibrary.getPlaywith(this);
+				if(repeatMode == RoLibrary.REPEAT_NEXT_ALBUM){
+					ArrayList<Album> albums;
+					Track track;
+					int index;
+					ArrayList<Track> tracks;
+					if(playwith == RoLibrary.PLAYWITH_ALBUM){
+						albums = RoLibrary.getAlbums(this);
+						track = RoLibrary.getCurrentTrack(this);
+						index = albums.indexOf(RoLibrary.getAlbum(this, track.albumId));
+						index--;
+						if(index < 1){
+							index = albums.size();
+						}
+						tracks = RoLibrary.getTracksInAlbum(this,albums.get(index));
+						RoLibrary.setCurrentPlaylist(this,tracks,playwith);
+						mCurrentPlaylist = tracks;
+						mCurrentNo = mCurrentPlaylist.size();
+					}
+					else if(playwith == RoLibrary.PLAYWITH_ALBUM_ARTIST){
+						track = RoLibrary.getCurrentTrack(this);
+						albums = RoLibrary.getAlbumsInArtists(this,track.artistId);
+						index = albums.indexOf(RoLibrary.getAlbum(this, track.albumId));
+						index--;
+						if(index < 1){
+							index = albums.size();
+						}
+						tracks = RoLibrary.getTracksInAlbum(this, albums.get(index));
+						RoLibrary.setCurrentPlaylist(this,tracks,playwith);
+						mCurrentPlaylist = tracks;
+						mCurrentNo = mCurrentPlaylist.size();
+					}
+				}
 			}
 			RoLibrary.setNo(this, mCurrentNo);
-			switch (mState) {
+			switch (mState){
 				case STATE_PAUSE:
 					setNewTrack(mCurrentPlaylist.get(mCurrentNo - 1));
 					break;
@@ -191,18 +320,57 @@ public class PlayerService extends Service {
 		return mp.getCurrentPosition();
 	}
 
+	private void setRepeatMode(int repeatMode){
+		if(mRepeatMode != repeatMode) {
+			mRepeatMode = repeatMode;
+			RoLibrary.setRepeatMode(this, mRepeatMode);
+			for(StateChangeListener listener : mListeners){
+				listener.onRepeatModeChange(mRepeatMode);
+			}
+
+			switch (mRepeatMode){
+				case RoLibrary.REPEAT_OFF:
+					mBigViews.setInt(R.id.btn_repeat, "setBackgroundResource", R.drawable.repeat_off_small);
+					break;
+
+				case RoLibrary.REPEAT_NORMAL:
+					mBigViews.setInt(R.id.btn_repeat, "setBackgroundResource", R.drawable.repeat_normal_small);
+					break;
+
+				case RoLibrary.REPEAT_TRACK:
+					mBigViews.setInt(R.id.btn_repeat, "setBackgroundResource", R.drawable.repeat_track_small);
+					break;
+
+				case RoLibrary.REPEAT_OFF_TRACK:
+					mBigViews.setInt(R.id.btn_repeat, "setBackgroundResource", R.drawable.repeat_off_track_small);
+					break;
+
+				case RoLibrary.REPEAT_NEXT_ALBUM:
+					mBigViews.setInt(R.id.btn_repeat, "setBackgroundResource", R.drawable.repeat_next_album_small);
+					break;
+			}
+			startForeground(R.string.app_name,mNotify);
+		}
+	}
+
+	public void toggleRepeatMode(){
+		int repeatMode = mRepeatMode;
+		repeatMode++;
+		repeatMode %= 5;
+		setRepeatMode(repeatMode);
+	}
+
+	public int getRepeatMode(){
+		return mRepeatMode;
+	}
+
 	private void setNewTrack(Track track){
 		if(mp != null){
 			mp.stop();
 			mp.release();
 		}
 		mp = new MediaPlayer();
-		mp.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-			@Override
-			public void onCompletion(MediaPlayer mp) {
-				next();
-			}
-		});
+		mp.setOnCompletionListener(this);
 		try {
 			mp.setDataSource(track.path);
 			mp.prepare();
@@ -210,13 +378,24 @@ public class PlayerService extends Service {
 			Log.d("TEST", e.getMessage());
 			throw new RuntimeException(e.getMessage(), e);
 		}
-		showNotification(track);
 		onTrackChange(track);
 	}
 
 	private void setState(int state){
 		if(mState != state) {
 			mState = state;
+			switch (mState){
+				case STATE_PAUSE:
+					mBigViews.setInt(R.id.btn_play, "setBackgroundResource", R.drawable.play_small);
+					mSmallViews.setInt(R.id.btn_play, "setBackgroundResource", R.drawable.play_small);
+					break;
+
+				case STATE_PLAY:
+					mBigViews.setInt(R.id.btn_play, "setBackgroundResource", R.drawable.pause_small);
+					mSmallViews.setInt(R.id.btn_play, "setBackgroundResource", R.drawable.pause_small);
+					break;
+			}
+			startForeground(R.string.app_name,mNotify);
 			for(StateChangeListener listener : mListeners){
 				listener.onStateChange(mState);
 			}
@@ -227,6 +406,26 @@ public class PlayerService extends Service {
 		for(StateChangeListener listener : mListeners){
 			listener.onTrackChange(track,mCurrentNo,mCurrentPlaylist.size());
 		}
+		MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+		Bitmap bitmap;
+		try {
+			mmr.setDataSource(track.path);
+			byte[] data = mmr.getEmbeddedPicture();
+			if (data == null) {
+				bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
+			} else {
+				bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+			}
+		} catch (Exception e) {
+			bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
+		}
+		mBigViews.setImageViewBitmap(R.id.album_art, bitmap);
+		mBigViews.setTextViewText(R.id.title, track.title);
+		mBigViews.setTextViewText(R.id.artist, track.artist);
+		mSmallViews.setImageViewBitmap(R.id.album_art, bitmap);
+		mSmallViews.setTextViewText(R.id.title, track.title);
+		mSmallViews.setTextViewText(R.id.artist, track.artist);
+		startForeground(R.string.app_name,mNotify);
 	}
 
 	public void addStateChangeListener(StateChangeListener listener){
@@ -236,6 +435,89 @@ public class PlayerService extends Service {
 	public void removeStateChangeListener(StateChangeListener listener){
 		if(mListeners.contains(listener)) {
 			mListeners.remove(listener);
+		}
+	}
+
+	@Override
+	public void onCompletion(MediaPlayer mp) {
+		switch (RoLibrary.getRepeatMode(this)){
+			case RoLibrary.REPEAT_OFF_TRACK:
+				mCurrentNo++;
+				if(mCurrentNo > mCurrentPlaylist.size()){
+					mCurrentNo = 1;
+				}
+				RoLibrary.setNo(this, mCurrentNo);
+				setNewTrack(mCurrentPlaylist.get(mCurrentNo - 1));
+				setState(STATE_PAUSE);
+				break;
+
+			case RoLibrary.REPEAT_TRACK:
+				this.mp.seekTo(0);
+				this.mp.start();
+				break;
+
+			case RoLibrary.REPEAT_OFF:
+				mCurrentNo++;
+				if(mCurrentNo > mCurrentPlaylist.size()){
+					mCurrentNo = 1;
+					RoLibrary.setNo(this, mCurrentNo);
+					setNewTrack(mCurrentPlaylist.get(mCurrentNo - 1));
+					setState(STATE_PAUSE);
+				}else{
+					RoLibrary.setNo(this, mCurrentNo);
+					play(mCurrentPlaylist.get(mCurrentNo - 1));
+				}
+				break;
+
+			case RoLibrary.REPEAT_NORMAL:
+				mCurrentNo++;
+				if(mCurrentNo > mCurrentPlaylist.size()) {
+					mCurrentNo = 1;
+				}
+				RoLibrary.setNo(this, mCurrentNo);
+				play(mCurrentPlaylist.get(mCurrentNo - 1));
+				break;
+
+			case RoLibrary.REPEAT_NEXT_ALBUM:
+				mCurrentNo++;
+				if(mCurrentNo > mCurrentPlaylist.size()) {
+					mCurrentNo = 1;
+					int repeatMode = RoLibrary.getRepeatMode(this);
+					int playwith = RoLibrary.getPlaywith(this);
+					if(repeatMode == RoLibrary.REPEAT_NEXT_ALBUM){
+						ArrayList<Album> albums;
+						Track track;
+						int index;
+						ArrayList<Track> tracks;
+						if(playwith == RoLibrary.PLAYWITH_ALBUM){
+							albums = RoLibrary.getAlbums(this);
+							track = RoLibrary.getCurrentTrack(this);
+							index = albums.indexOf(RoLibrary.getAlbum(this, track.albumId));
+							index++;
+							if(index > albums.size()){
+								index = 1;
+							}
+							tracks = RoLibrary.getTracksInAlbum(this,albums.get(index));
+							RoLibrary.setCurrentPlaylist(this,tracks,playwith);
+							mCurrentPlaylist = tracks;
+						}
+						else if(playwith == RoLibrary.PLAYWITH_ALBUM_ARTIST){
+							track = RoLibrary.getCurrentTrack(this);
+							albums = RoLibrary.getAlbumsInArtists(this,track.artistId);
+							index = albums.indexOf(RoLibrary.getAlbum(this, track.albumId));
+							index++;
+							if(index > albums.size()){
+								index = 1;
+							}
+							tracks = RoLibrary.getTracksInAlbum(this, albums.get(index));
+							RoLibrary.setCurrentPlaylist(this,tracks,playwith);
+							mCurrentPlaylist = tracks;
+						}
+					}
+				}
+				RoLibrary.setNo(this, mCurrentNo);
+				play(mCurrentPlaylist.get(mCurrentNo - 1));
+				break;
 		}
 	}
 
@@ -249,9 +531,11 @@ public class PlayerService extends Service {
 		public void onStateChange(int state);
 
 		public void onTrackChange(Track track,int no,int playlistSize);
+
+		public void onRepeatModeChange(int repeatMode);
 	}
 
-	public class PlayerBroadcasrReceiver extends BroadcastReceiver{
+	public class PlayerBroadcastReceiver extends BroadcastReceiver{
 
 		@Override
 		public void onReceive(Context context, Intent intent) {
@@ -272,6 +556,14 @@ public class PlayerService extends Service {
 
 					case ACTION_PREVIOUS:
 						previous();
+						break;
+
+					case ACTION_REPEAT_MODE:
+						toggleRepeatMode();
+						break;
+
+					case AudioManager.ACTION_AUDIO_BECOMING_NOISY:
+						pause();
 						break;
 				}
 			}

@@ -35,7 +35,7 @@ public class TrackFragment extends Fragment {
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 				Track track = (Track)parent.getItemAtPosition(position);
-				RoLibrary.setCurrentPlaylist(getActivity(), RoLibrary.getTracks(getActivity()));
+				RoLibrary.setCurrentPlaylist(getActivity(), RoLibrary.getTracks(getActivity()),RoLibrary.PLAYWITH_TRACK);
 				RoLibrary.setNo(getActivity(), position + 1);
 
 				ImageView albumart = (ImageView) view.findViewById(R.id.album_art);
@@ -43,8 +43,8 @@ public class TrackFragment extends Fragment {
 				String transitionName = getString(R.string.album_art);
 				ActivityOptionsCompat options =
 						ActivityOptionsCompat.makeSceneTransitionAnimation(getActivity(),
-								albumart,   // 遷移がはじまるビュー
-								transitionName    // 遷移先のビューの transitionName
+								albumart,   // 驕ｷ遘ｻ縺後�ｯ縺倥∪繧九ン繝･繝ｼ
+								transitionName    // 驕ｷ遘ｻ蜈医�ｮ繝薙Η繝ｼ縺ｮ transitionName
 						);
 				ActivityCompat.startActivity(getActivity(), intent, options.toBundle());
 

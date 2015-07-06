@@ -39,6 +39,7 @@ public class AlbumFragment extends Fragment{
 			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 				Album album = RoLibrary.getAlbums(getActivity()).get(position);
 				Intent intent =  new Intent(getActivity(),AlbumTrackActivity.class);
+				intent.putExtra(RoLibrary.KEY_PLAYWITH,RoLibrary.PLAYWITH_ALBUM);
 				intent.putExtra(AlbumTrackActivity.INTENT_KEY,album.id);
 				String transitionName = getString(R.string.album_art);
 				ActivityOptionsCompat options =

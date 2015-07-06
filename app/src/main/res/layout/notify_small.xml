@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:orientation="horizontal"
+	android:layout_width="match_parent"
+	android:layout_height="64dp"
+	android:background="@color/drawer_slider_back">
+
+	<ImageView
+		android:layout_width="64dp"
+		android:layout_height="64dp"
+		android:id="@+id/album_art"
+		android:adjustViewBounds="true"
+		android:scaleType="fitCenter"/>
+
+	<LinearLayout
+		android:layout_width="0dp"
+		android:layout_weight="1"
+		android:layout_height="wrap_content"
+		android:orientation="vertical"
+		android:layout_marginLeft="6dp"
+		android:layout_gravity="center_vertical">
+
+		<TextView
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:id="@+id/title"
+			android:textAppearance="?android:attr/textAppearanceMedium"/>
+
+		<TextView
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:id="@+id/artist"
+			android:textAppearance="?android:attr/textAppearanceSmall"/>
+
+	</LinearLayout>
+
+	<RelativeLayout
+		android:layout_width="wrap_content"
+		android:layout_height="match_parent">
+
+		<LinearLayout
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_centerVertical="true"
+			android:orientation="horizontal"
+			android:id="@+id/buttons">
+
+			<ImageButton
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:id="@+id/btn_previous"
+				android:background="@drawable/previous_small"/>
+
+			<ImageButton
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:id="@+id/btn_play"
+				android:background="@drawable/play_small"/>
+
+			<ImageButton
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:id="@+id/btn_next"
+				android:background="@drawable/next_small"/>
+
+		</LinearLayout>
+
+		<ImageButton
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:id="@+id/btn_close"
+			android:layout_alignParentTop="true"
+			android:layout_alignRight="@+id/buttons"
+			android:background="@drawable/notify_close_small"/>
+
+	</RelativeLayout>
+
+</LinearLayout>

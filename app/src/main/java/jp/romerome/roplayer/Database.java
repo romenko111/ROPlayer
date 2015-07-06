@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import java.util.ArrayList;
 
@@ -27,6 +28,7 @@ public class Database {
 				db.insert(DatabaseHelper.TABLE_NAME, null, values);
 			}
 			db.setTransactionSuccessful();
+			Log.d("test","TransactionSuccessful");
 		}finally {
 			db.endTransaction();
 		}

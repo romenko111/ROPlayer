@@ -76,4 +76,9 @@ public class PlayActivity extends AppCompatActivity implements PlayerService.Sta
 		mTrack = track;
 		updateView();
 	}
+
+	@Override
+	public void onRepeatModeChange(int repeatMode) {
+
+	}
 }

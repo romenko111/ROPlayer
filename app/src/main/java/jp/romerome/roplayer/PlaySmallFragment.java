@@ -52,8 +52,8 @@ public class PlaySmallFragment extends Fragment implements PlayerService.StateCh
 				String transitionName = getString(R.string.album_art);
 				ActivityOptionsCompat options =
 						ActivityOptionsCompat.makeSceneTransitionAnimation(getActivity(),
-								mAlbumart,   // 遷移がはじまるビュー
-								transitionName    // 遷移先のビューの transitionName
+								mAlbumart,   // 驕ｷ遘ｻ縺後�ｯ縺倥∪繧九ン繝･繝ｼ
+								transitionName    // 驕ｷ遘ｻ蜈医�ｮ繝薙Η繝ｼ縺ｮ transitionName
 						);
 				ActivityCompat.startActivity(getActivity(), intent, options.toBundle());
 			}
@@ -128,12 +128,12 @@ public class PlaySmallFragment extends Fragment implements PlayerService.StateCh
 				mState = mService.getState();
 				switch (mState){
 					case PlayerService.STATE_PLAY:
-						mPlayButton.setBackgroundResource(R.drawable.ic_media_pause);
+						mPlayButton.setBackgroundResource(R.drawable.pause_small);
 						updateView(RoLibrary.getNo(getActivity()), RoLibrary.getCurrentPlaylist(getActivity()).size());
 						break;
 
 					case PlayerService.STATE_PAUSE:
-						mPlayButton.setBackgroundResource(R.drawable.ic_media_play);
+						mPlayButton.setBackgroundResource(R.drawable.play_small);
 						updateView(RoLibrary.getNo(getActivity()), RoLibrary.getCurrentPlaylist(getActivity()).size());
 						break;
 				}
@@ -153,11 +153,11 @@ public class PlaySmallFragment extends Fragment implements PlayerService.StateCh
 		mState = state;
 		switch (mState){
 			case PlayerService.STATE_PLAY:
-				mPlayButton.setBackgroundResource(R.drawable.ic_media_pause);
+				mPlayButton.setBackgroundResource(R.drawable.pause_small);
 				break;
 
 			case PlayerService.STATE_PAUSE:
-				mPlayButton.setBackgroundResource(R.drawable.ic_media_play);
+				mPlayButton.setBackgroundResource(R.drawable.play_small);
 				break;
 		}
 	}
@@ -167,4 +167,18 @@ public class PlaySmallFragment extends Fragment implements PlayerService.StateCh
 		mTrack = track;
 		updateView(no,playlistSize);
 	}
+
+	@Override
+	public void onRepeatModeChange(int repeatMode) {
+
+	}
+
+	@Override
+	public void onDestroy(){
+		super.onDestroy();
+		if(mServiceConnection != null){
+			getActivity().unbindService(mServiceConnection);
+		}
+	}
+
 }

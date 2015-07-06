@@ -32,6 +32,7 @@ public class PlayFragment extends Fragment implements PlayerService.StateChangeL
 	private ImageButton mPlayButton;
 	private ImageButton mNextButton;
 	private ImageButton mPreviousButton;
+	private ImageButton mRepeatButton;
 	private TextView mTrackNoView;
 	private TextView mDurationView;
 	private TextView mElpsedView;
@@ -104,6 +105,14 @@ public class PlayFragment extends Fragment implements PlayerService.StateChangeL
 			}
 		});
 
+		mRepeatButton = (ImageButton) rootView.findViewById(R.id.btn_repeat);
+		mRepeatButton.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				mService.toggleRepeatMode();
+			}
+		});
+
 		mAlbumart = (ImageView) rootView.findViewById(R.id.album_art);
 		initService();
 
@@ -118,35 +127,33 @@ public class PlayFragment extends Fragment implements PlayerService.StateChangeL
 			mState = mService.getState();
 			switch (mState){
 				case PlayerService.STATE_PLAY:
-					mPlayButton.setBackgroundResource(R.drawable.ic_media_pause);
+					mPlayButton.setBackgroundResource(R.drawable.pause);
 					break;
 
 				case PlayerService.STATE_PAUSE:
-					mPlayButton.setBackgroundResource(R.drawable.ic_media_play);
+					mPlayButton.setBackgroundResource(R.drawable.play);
 					break;
 			}
 			if(mState != PlayerService.STATE_STOP) {
 				updateView(RoLibrary.getNo(getActivity()), RoLibrary.getCurrentPlaylist(getActivity()).size());
-				if (mTimer != null) {
-					mTimer.cancel();
-					mTimer = null;
-				}
-				mTimer = new Timer(true);
-				mTimer.schedule(new TimerTask() {
-					@Override
-					public void run() {
-						mHandler.post(new Runnable() {
-							@Override
-							public void run() {
-								if (!isSeeking) {
-									int time = mService.getElpsedTime();
-									mElpsedView.setText(RoLibrary.getStringTime(time));
-									mSeekBar.setProgress(time);
+				if (mTimer == null) {
+					mTimer = new Timer(true);
+					mTimer.schedule(new TimerTask() {
+						@Override
+						public void run() {
+							mHandler.post(new Runnable() {
+								@Override
+								public void run() {
+									if (!isSeeking) {
+										int time = mService.getElpsedTime();
+										mElpsedView.setText(RoLibrary.getStringTime(time));
+										mSeekBar.setProgress(time);
+									}
 								}
-							}
-						});
-					}
-				}, 100, 100);
+							});
+						}
+					}, 100, 100);
+				}
 			}
 		}
 	}
@@ -156,6 +163,18 @@ public class PlayFragment extends Fragment implements PlayerService.StateChangeL
 		super.onPause();
 		if(mService != null){
 			mService.removeStateChangeListener(this);
+			if(mTimer != null){
+				mTimer.cancel();
+				mTimer = null;
+			}
+		}
+	}
+
+	@Override
+	public void onDestroy(){
+		super.onDestroy();
+		if(mServiceConnection != null){
+			getActivity().unbindService(mServiceConnection);
 		}
 	}
 
@@ -183,6 +202,30 @@ public class PlayFragment extends Fragment implements PlayerService.StateChangeL
 		}
 	}
 
+	private void setRepeatMode(int repeatMode){
+		switch (repeatMode){
+			case RoLibrary.REPEAT_OFF:
+				mRepeatButton.setBackgroundResource(R.drawable.repeat_off);
+				break;
+
+			case RoLibrary.REPEAT_NORMAL:
+				mRepeatButton.setBackgroundResource(R.drawable.repeat_normal);
+				break;
+
+			case RoLibrary.REPEAT_TRACK:
+				mRepeatButton.setBackgroundResource(R.drawable.repeat_track);
+				break;
+
+			case RoLibrary.REPEAT_OFF_TRACK:
+				mRepeatButton.setBackgroundResource(R.drawable.repeat_off_track);
+				break;
+
+			case RoLibrary.REPEAT_NEXT_ALBUM:
+				mRepeatButton.setBackgroundResource(R.drawable.repeat_next_album);
+				break;
+		}
+	}
+
 	private void initService(){
 		Intent service = new Intent(getActivity().getApplication(),PlayerService.class);
 		getActivity().startService(service);
@@ -196,35 +239,34 @@ public class PlayFragment extends Fragment implements PlayerService.StateChangeL
 				mState = mService.getState();
 				switch (mState){
 					case PlayerService.STATE_PLAY:
-						mPlayButton.setBackgroundResource(R.drawable.ic_media_pause);
+						mPlayButton.setBackgroundResource(R.drawable.pause);
 						break;
 
 					case PlayerService.STATE_PAUSE:
-						mPlayButton.setBackgroundResource(R.drawable.ic_media_play);
+						mPlayButton.setBackgroundResource(R.drawable.play);
 						break;
 				}
+				setRepeatMode(mService.getRepeatMode());
 				if(mState != PlayerService.STATE_STOP) {
 					updateView(RoLibrary.getNo(getActivity()), RoLibrary.getCurrentPlaylist(getActivity()).size());
-					if(mTimer != null){
-						mTimer.cancel();
-						mTimer = null;
-					}
-					mTimer = new Timer(true);
-					mTimer.schedule(new TimerTask() {
-						@Override
-						public void run() {
-							mHandler.post(new Runnable() {
-								@Override
-								public void run() {
-									if (!isSeeking) {
-										int time = mService.getElpsedTime();
-										mElpsedView.setText(RoLibrary.getStringTime(time));
-										mSeekBar.setProgress(time);
+					if(mTimer == null) {
+						mTimer = new Timer(true);
+						mTimer.schedule(new TimerTask() {
+							@Override
+							public void run() {
+								mHandler.post(new Runnable() {
+									@Override
+									public void run() {
+										if (!isSeeking) {
+											int time = mService.getElpsedTime();
+											mElpsedView.setText(RoLibrary.getStringTime(time));
+											mSeekBar.setProgress(time);
+										}
 									}
-								}
-							});
-						}
-					}, 100, 100);
+								});
+							}
+						}, 100, 100);
+					}
 				}
 			}
 
@@ -241,11 +283,11 @@ public class PlayFragment extends Fragment implements PlayerService.StateChangeL
 		mState = state;
 		switch (mState){
 			case PlayerService.STATE_PLAY:
-				mPlayButton.setBackgroundResource(R.drawable.ic_media_pause);
+				mPlayButton.setBackgroundResource(R.drawable.pause);
 				break;
 
 			case PlayerService.STATE_PAUSE:
-				mPlayButton.setBackgroundResource(R.drawable.ic_media_play);
+				mPlayButton.setBackgroundResource(R.drawable.play);
 				break;
 		}
 	}
@@ -257,6 +299,11 @@ public class PlayFragment extends Fragment implements PlayerService.StateChangeL
 		if(mListener != null){
 			mListener.onTrackChange(track,no,playlistSize);
 		}
+	}
+
+	@Override
+	public void onRepeatModeChange(int repeatMode) {
+		setRepeatMode(repeatMode);
 	}
 
 	public  void setStateChangeListener(PlayerService.StateChangeListener listener){

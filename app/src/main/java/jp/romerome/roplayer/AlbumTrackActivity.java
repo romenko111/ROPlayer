@@ -13,6 +13,7 @@ public class AlbumTrackActivity extends AppCompatActivity{
 
 	public static final String INTENT_KEY = "ALBUM_ID";
 	private Album mAlbum;
+	private int mPlaywith;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -20,6 +21,7 @@ public class AlbumTrackActivity extends AppCompatActivity{
 		setContentView(R.layout.activity_toolbar);
 		Intent intent = getIntent();
 		mAlbum = RoLibrary.getAlbum(this,intent.getLongExtra(INTENT_KEY,-1));
+		mPlaywith = intent.getIntExtra(RoLibrary.KEY_PLAYWITH,RoLibrary.PLAYWITH_ALBUM);
 
 		Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
 		toolbar.setLogo(R.mipmap.ic_launcher);
@@ -30,6 +32,7 @@ public class AlbumTrackActivity extends AppCompatActivity{
 
 		Fragment fragment = new AlbumTrackFragment();
 		Bundle args = new Bundle();
+		args.putInt(RoLibrary.KEY_PLAYWITH,mPlaywith);
 		args.putLong(INTENT_KEY, mAlbum.id);
 		fragment.setArguments(args);
 		FragmentManager fragmentManager = getSupportFragmentManager();

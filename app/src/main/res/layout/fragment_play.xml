@@ -50,54 +50,71 @@
 
 	</RelativeLayout>
 
-	<RelativeLayout
+	<LinearLayout
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
-		android:layout_alignParentBottom="true">
+		android:orientation="horizontal">
 
-		<ToggleButton
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:id="@+id/btn_shuffle"
-			android:layout_alignParentLeft="true"
-			android:layout_centerVertical="true"
-			android:background="@drawable/drawer_list_selector"
-			android:textOff=""
-			android:textOn=""/>
+		<View
+			android:layout_width="0dp"
+			android:layout_height="1dp"
+			android:layout_weight="1"/>
 
 		<ImageButton
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
-			android:id="@+id/btn_play"
-			android:layout_centerInParent="true"
-			android:background="@drawable/ic_media_play"/>
+			android:id="@+id/btn_shuffle"
+			android:background="@drawable/repeat_normal"/>
+
+		<View
+			android:layout_width="0dp"
+			android:layout_height="1dp"
+			android:layout_weight="1"/>
 
 		<ImageButton
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
 			android:id="@+id/btn_previous"
-			android:layout_toLeftOf="@+id/btn_play"
-			android:layout_centerVertical="true"
-			android:background="@drawable/ic_media_previous"/>
+			android:background="@drawable/previous"/>
+
+		<View
+			android:layout_width="0dp"
+			android:layout_height="1dp"
+			android:layout_weight="1"/>
+
+		<ImageButton
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:id="@+id/btn_play"
+			android:background="@drawable/play"/>
+
+		<View
+			android:layout_width="0dp"
+			android:layout_height="1dp"
+			android:layout_weight="1"/>
 
 		<ImageButton
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
 			android:id="@+id/btn_next"
-			android:layout_toRightOf="@+id/btn_play"
-			android:layout_centerVertical="true"
-			android:background="@drawable/ic_media_next"/>
+			android:background="@drawable/next"/>
 
-		<ToggleButton
+		<View
+			android:layout_width="0dp"
+			android:layout_height="1dp"
+			android:layout_weight="1"/>
+
+		<ImageButton
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
 			android:id="@+id/btn_repeat"
-			android:layout_alignParentRight="true"
-			android:layout_centerVertical="true"
-			android:background="@drawable/drawer_list_selector"
-			android:textOff=""
-			android:textOn=""/>
+			android:background="@drawable/repeat_off"/>
 
-	</RelativeLayout>
+		<View
+			android:layout_width="0dp"
+			android:layout_height="1dp"
+			android:layout_weight="1"/>
+
+	</LinearLayout>
 
 </LinearLayout>

@@ -25,6 +25,7 @@ public class AlbumTrackFragment extends Fragment {
 
 	private Album mAlbum;
 	private ImageView mAlbumart;
+	private int mPlaywith;
 
 	public AlbumTrackFragment(){
 
@@ -38,6 +39,7 @@ public class AlbumTrackFragment extends Fragment {
 
 		ListView listView = (ListView) rootView.findViewById(R.id.listview);
 		Bundle args = getArguments();
+		mPlaywith = args.getInt(RoLibrary.KEY_PLAYWITH);
 		long albumId = args.getLong(AlbumTrackActivity.INTENT_KEY);
 		mAlbum = RoLibrary.getAlbum(getActivity(),albumId);
 		ArrayList<Track> tracks = RoLibrary.getTracksInAlbum(getActivity(),albumId);
@@ -47,17 +49,17 @@ public class AlbumTrackFragment extends Fragment {
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 				Track track = (Track) parent.getItemAtPosition(position);
-				RoLibrary.setCurrentPlaylist(getActivity(), track.albumId);
+				RoLibrary.setCurrentPlaylist(getActivity(), track.albumId,mPlaywith);
 				RoLibrary.setNo(getActivity(), position + 1);
 
-				Intent intent = new Intent(getActivity(), PlayActivity.class);
+				Intent intent2 = new Intent(getActivity(), PlayActivity.class);
 				String transitionName = getString(R.string.album_art);
 				ActivityOptionsCompat options =
 						ActivityOptionsCompat.makeSceneTransitionAnimation(getActivity(),
 								mAlbumart,   // 遷移がはじまるビュー
 								transitionName    // 遷移先のビューの transitionName
 						);
-				ActivityCompat.startActivity(getActivity(), intent, options.toBundle());
+				ActivityCompat.startActivity(getActivity(), intent2, options.toBundle());
 
 				Intent broadcastIntent = new Intent();
 				broadcastIntent.setAction(PlayerService.ACTION_NEW_PLAY);

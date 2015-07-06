@@ -4,7 +4,7 @@
     <color name="primary_dark">#1B5E20</color>
     <color name="primary_accent">#E91E63</color>
     <color name="primary_accent2">#ffade900</color>
-    <color name="drawer_slider_back">#5F5F5F</color>
+    <color name="drawer_slider_back">#ff353535</color>
     <color name="drawer_slider_back_selected">#81C784</color>
     <color name="drawer_slider_item">#FFFFFF</color>
 
