@@ -81,4 +81,5 @@ public class PlayActivity extends AppCompatActivity implements PlayerService.Sta
 	public void onRepeatModeChange(int repeatMode) {
 
 	}
+
 }

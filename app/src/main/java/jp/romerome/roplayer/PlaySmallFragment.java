@@ -159,6 +159,10 @@ public class PlaySmallFragment extends Fragment implements PlayerService.StateCh
 			case PlayerService.STATE_PAUSE:
 				mPlayButton.setBackgroundResource(R.drawable.play_small);
 				break;
+
+			case PlayerService.STATE_STOP:
+				getActivity().finish();
+				break;
 		}
 	}
 
@@ -176,6 +180,7 @@ public class PlaySmallFragment extends Fragment implements PlayerService.StateCh
 	@Override
 	public void onDestroy(){
 		super.onDestroy();
+		mService.removeStateChangeListener(this);
 		if(mServiceConnection != null){
 			getActivity().unbindService(mServiceConnection);
 		}

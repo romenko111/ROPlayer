@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="primary">#4CAF50</color>
-    <color name="primary_dark">#1B5E20</color>
+    <color name="primary">#ff418d45</color>
+    <color name="primary_dark">#ff163c1b</color>
     <color name="primary_accent">#E91E63</color>
     <color name="primary_accent2">#ffade900</color>
     <color name="drawer_slider_back">#ff353535</color>
-    <color name="drawer_slider_back_selected">#81C784</color>
+    <color name="drawer_slider_back_selected">#ff5a945e</color>
     <color name="drawer_slider_item">#FFFFFF</color>
 
 </resources>

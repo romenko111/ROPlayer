@@ -123,37 +123,23 @@ public class PlayFragment extends Fragment implements PlayerService.StateChangeL
 	public void onResume(){
 		super.onResume();
 		if(mService != null){
-			mService.addStateChangeListener(this);
-			mState = mService.getState();
-			switch (mState){
-				case PlayerService.STATE_PLAY:
-					mPlayButton.setBackgroundResource(R.drawable.pause);
-					break;
-
-				case PlayerService.STATE_PAUSE:
-					mPlayButton.setBackgroundResource(R.drawable.play);
-					break;
-			}
-			if(mState != PlayerService.STATE_STOP) {
-				updateView(RoLibrary.getNo(getActivity()), RoLibrary.getCurrentPlaylist(getActivity()).size());
-				if (mTimer == null) {
-					mTimer = new Timer(true);
-					mTimer.schedule(new TimerTask() {
-						@Override
-						public void run() {
-							mHandler.post(new Runnable() {
-								@Override
-								public void run() {
-									if (!isSeeking) {
-										int time = mService.getElpsedTime();
-										mElpsedView.setText(RoLibrary.getStringTime(time));
-										mSeekBar.setProgress(time);
-									}
+			if (mTimer == null) {
+				mTimer = new Timer(true);
+				mTimer.schedule(new TimerTask() {
+					@Override
+					public void run() {
+						mHandler.post(new Runnable() {
+							@Override
+							public void run() {
+								if (!isSeeking) {
+									int time = mService.getElpsedTime();
+									mElpsedView.setText(RoLibrary.getStringTime(time));
+									mSeekBar.setProgress(time);
 								}
-							});
-						}
-					}, 100, 100);
-				}
+							}
+						});
+					}
+				}, 100, 100);
 			}
 		}
 	}
@@ -162,7 +148,6 @@ public class PlayFragment extends Fragment implements PlayerService.StateChangeL
 	public void onPause(){
 		super.onPause();
 		if(mService != null){
-			mService.removeStateChangeListener(this);
 			if(mTimer != null){
 				mTimer.cancel();
 				mTimer = null;
@@ -173,6 +158,8 @@ public class PlayFragment extends Fragment implements PlayerService.StateChangeL
 	@Override
 	public void onDestroy(){
 		super.onDestroy();
+		mService.removeStateChangeListener(this);
+		mListener = null;
 		if(mServiceConnection != null){
 			getActivity().unbindService(mServiceConnection);
 		}
@@ -288,6 +275,10 @@ public class PlayFragment extends Fragment implements PlayerService.StateChangeL
 
 			case PlayerService.STATE_PAUSE:
 				mPlayButton.setBackgroundResource(R.drawable.play);
+				break;
+
+			case PlayerService.STATE_STOP:
+				getActivity().finish();
 				break;
 		}
 	}

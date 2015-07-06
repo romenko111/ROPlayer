@@ -36,6 +36,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 	public static final String ACTION_PREVIOUS = "Ro_previous";
 	public static final String ACTION_NEW_PLAY = "Ro_newplay";
 	public static final String ACTION_REPEAT_MODE = "Ro_repeatmode";
+	public static final String ACTION_CLOSE = "Ro_close";
 
 	private NotificationManager mNM;
 	private final IBinder mBinder = new RoBinder();
@@ -60,6 +61,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 		filter.addAction(ACTION_PREVIOUS);
 		filter.addAction(ACTION_REPEAT_MODE);
 		filter.addAction(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
+		filter.addAction(ACTION_CLOSE);
 		registerReceiver(mReceiver, filter);
 
 		mListeners = new ArrayList<>();
@@ -86,9 +88,13 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 	@Override
 	public void onDestroy() {
 		mNM.cancel(R.string.app_name);
-		mp.stop();
-		mp.release();
-		mp = null;
+		if(mp != null){
+			if(mp.isPlaying()){
+				mp.stop();
+			}
+			mp.release();
+			mp = null;
+		}
 		unregisterReceiver(mReceiver);
 	}
 
@@ -146,6 +152,11 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 		pi = PendingIntent.getBroadcast(this,0,intent,0);
 		mBigViews.setOnClickPendingIntent(R.id.btn_repeat,pi);
 
+		intent = new Intent(ACTION_CLOSE);
+		pi = PendingIntent.getBroadcast(this,0,intent,0);
+		mBigViews.setOnClickPendingIntent(R.id.btn_close,pi);
+		mSmallViews.setOnClickPendingIntent(R.id.btn_close,pi);
+
 		Intent notificationIntent = new Intent(this, PlayActivity.class);
 		PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
@@ -195,7 +206,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 	public void newPlay(){
 		mCurrentPlaylist = RoLibrary.getCurrentPlaylist(this);
 		mCurrentNo = RoLibrary.getNo(this);
-		setNewTrack(mCurrentPlaylist.get(mCurrentNo - 1),true);
+		setNewTrack(mCurrentPlaylist.get(mCurrentNo - 1), true);
 	}
 
 	public void next(){
@@ -385,9 +396,17 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 		onTrackChange(track);
 	}
 
+	private void close(){
+		setState(STATE_STOP);
+	}
+
 	private void setState(int state){
 		if(mState != state) {
 			mState = state;
+			for(StateChangeListener listener : mListeners){
+				listener.onStateChange(mState);
+			}
+
 			switch (mState){
 				case STATE_PAUSE:
 					mBigViews.setInt(R.id.btn_play, "setBackgroundResource", R.drawable.play_small);
@@ -398,11 +417,13 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 					mBigViews.setInt(R.id.btn_play, "setBackgroundResource", R.drawable.pause_small);
 					mSmallViews.setInt(R.id.btn_play, "setBackgroundResource", R.drawable.pause_small);
 					break;
+
+				case STATE_STOP:
+					stopSelf();
+					return;
 			}
 			startForeground(R.string.app_name,mNotify);
-			for(StateChangeListener listener : mListeners){
-				listener.onStateChange(mState);
-			}
+
 		}
 	}
 
@@ -447,7 +468,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 		switch (RoLibrary.getRepeatMode(this)){
 			case RoLibrary.REPEAT_OFF_TRACK:
 				mCurrentNo++;
-				if(mCurrentNo > mCurrentPlaylist.size()){
+				if (mCurrentNo > mCurrentPlaylist.size()) {
 					mCurrentNo = 1;
 				}
 				RoLibrary.setNo(this, mCurrentNo);
@@ -461,11 +482,11 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 
 			case RoLibrary.REPEAT_OFF:
 				mCurrentNo++;
-				if(mCurrentNo > mCurrentPlaylist.size()){
+				if (mCurrentNo > mCurrentPlaylist.size()) {
 					mCurrentNo = 1;
 					RoLibrary.setNo(this, mCurrentNo);
-					setNewTrack(mCurrentPlaylist.get(mCurrentNo - 1),false);
-				}else{
+					setNewTrack(mCurrentPlaylist.get(mCurrentNo - 1), false);
+				} else {
 					RoLibrary.setNo(this, mCurrentNo);
 					setNewTrack(mCurrentPlaylist.get(mCurrentNo - 1),true);
 				}
@@ -566,6 +587,10 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 
 					case AudioManager.ACTION_AUDIO_BECOMING_NOISY:
 						pause();
+						break;
+
+					case ACTION_CLOSE:
+						close();
 						break;
 				}
 			}
