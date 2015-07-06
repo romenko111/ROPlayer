@@ -11,7 +11,8 @@
 		android:layout_height="match_parent"
 		android:id="@+id/album_art"
 		android:adjustViewBounds="true"
-		android:scaleType="fitCenter"/>
+		android:scaleType="fitCenter"
+		android:layout_marginRight="3dp"/>
 
 	<RelativeLayout
 		android:layout_width="0dp"
