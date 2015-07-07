@@ -50,6 +50,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 	private Notification mNotify;
 	private int mRepeatMode = RoLibrary.REPEAT_OFF;
 	private PlayerBroadcastReceiver mReceiver;
+	private boolean isPreparing = false;
 
 	@Override
 	public void onCreate() {
@@ -63,6 +64,8 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 		filter.addAction(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
 		filter.addAction(ACTION_CLOSE);
 		registerReceiver(mReceiver, filter);
+
+		mp = new MediaPlayer();
 
 		mListeners = new ArrayList<>();
 		mNM = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
@@ -171,12 +174,13 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 	}
 
 	public void playpause(){
-		if(mp != null){
-			if(!mp.isPlaying()) {
-				play();
-			} else {
-				pause();
-			}
+		if(isPreparing){
+			return;
+		}
+		if(!mp.isPlaying()) {
+			play();
+		} else {
+			pause();
 		}
 	}
 
@@ -198,7 +202,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 	}
 
 	public void seekTo(int time){
-		if(mp != null){
+		if(!isPreparing){
 			mp.seekTo(time);
 		}
 	}
@@ -210,6 +214,9 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 	}
 
 	public void next(){
+		if(isPreparing){
+			return;
+		}
 		mCurrentNo++;
 		if(mCurrentNo > mCurrentPlaylist.size()) {
 			mCurrentNo = 1;
@@ -259,6 +266,9 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 	}
 
 	public void previous(){
+		if(isPreparing){
+			return;
+		}
 		if(getElpsedTime() > 3000){
 			seekTo(0);
 		} else {
@@ -369,19 +379,16 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 	}
 
 	private void setNewTrack(Track track, final boolean isPlay){
-		if(mp != null){
-			mp.stop();
-			mp.release();
-		}
-		mp = new MediaPlayer();
+		mp.reset();
 		mp.setOnCompletionListener(this);
 		mp.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
 			@Override
 			public void onPrepared(MediaPlayer mp) {
-				if(isPlay){
+				isPreparing = false;
+				if (isPlay) {
 					mp.start();
 					setState(STATE_PLAY);
-				}else{
+				} else {
 					setState(STATE_PAUSE);
 				}
 			}
@@ -389,6 +396,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 		try {
 			mp.setDataSource(track.path);
 			mp.prepareAsync();
+			isPreparing = true;
 		} catch (IOException e) {
 			Log.d("TEST", e.getMessage());
 			throw new RuntimeException(e.getMessage(), e);
