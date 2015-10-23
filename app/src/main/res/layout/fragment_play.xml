@@ -46,7 +46,7 @@
 			android:layout_height="wrap_content"
 			android:layout_below="@+id/duration"
 			android:id="@+id/seekbar"
-			android:padding="6dp"/>
+			android:padding="5dp"/>
 
 	</RelativeLayout>
 
